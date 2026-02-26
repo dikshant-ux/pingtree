@@ -31,7 +31,7 @@ if [ ! -f "$CERT_PATH" ]; then
         
         # 4. Restart Nginx to apply changes
         echo "♻️ Reloading Nginx with SSL..."
-        docker-compose exec nginx nginx -t && docker compose restart nginx
+        docker compose exec nginx nginx -t && docker compose restart nginx
     else
         echo "❌ SSL Generation failed. Please check your domain A records."
         exit 1
