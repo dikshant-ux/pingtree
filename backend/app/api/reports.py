@@ -1,13 +1,24 @@
-# Version: 2026-02-26-v3 - Final Beanie Collection Fix
+# Version: 2026-02-26-v4 - Robust Motor Fix
 import logging
 from typing import Dict, Any, Optional
 from datetime import datetime
 from fastapi import APIRouter
 from app.models.lead import Lead, LeadStatus
 from app.models.buyer import Buyer
+from app.core.config import settings
+from motor.motor_asyncio import AsyncIOMotorClient
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+
+# Global cached motor client for reports to bypass Beanie version issues
+_motor_client = None
+
+def get_leads_collection():
+    global _motor_client
+    if _motor_client is None:
+        _motor_client = AsyncIOMotorClient(settings.MONGODB_URL)
+    return _motor_client[settings.DATABASE_NAME]["leads"]
 
 def get_date_match(start_date: Optional[datetime], end_date: Optional[datetime]) -> Dict[str, Any]:
     match = {}
@@ -36,8 +47,8 @@ async def get_dashboard_stats(start_date: Optional[datetime] = None, end_date: O
             {"$group": {"_id": None, "total": {"$sum": "$sold_price"}}}
         ]
         
-        # UNIVERSAL FIX: Use Lead.get_settings().motor_collection for all environments
-        coll = Lead.get_settings().motor_collection
+        # UNIVERSAL FIX: Use direct Motor collection to avoid Beanie version conflicts
+        coll = get_leads_collection()
         revenue_result = await coll.aggregate(pipeline).to_list(length=None)
         total_revenue = revenue_result[0]["total"] if revenue_result else 0.0
         
@@ -67,8 +78,8 @@ async def get_today_stats() -> Dict[str, Any]:
             {"$group": {"_id": None, "total": {"$sum": "$sold_price"}}}
         ]
         
-        # UNIVERSAL FIX: Use Lead.get_settings().motor_collection for all environments
-        coll = Lead.get_settings().motor_collection
+        # UNIVERSAL FIX: Use direct Motor collection to avoid Beanie version conflicts
+        coll = get_leads_collection()
         revenue_result = await coll.aggregate(pipeline).to_list(length=None)
         total_revenue = revenue_result[0]["total"] if revenue_result else 0.0
         
@@ -102,8 +113,8 @@ async def get_activity_stats() -> Dict[str, Any]:
             {"$sort": {"_id": 1}}
         ]
         
-        # UNIVERSAL FIX: Use Lead.get_settings().motor_collection for all environments
-        coll = Lead.get_settings().motor_collection
+        # UNIVERSAL FIX: Use direct Motor collection to avoid Beanie version conflicts
+        coll = get_leads_collection()
         raw_data = await coll.aggregate(pipeline).to_list(length=None)
         return {"data": raw_data}
     except Exception as e:
@@ -137,8 +148,8 @@ async def get_revenue_stats(start_date: Optional[datetime] = None, end_date: Opt
             },
             {"$sort": {"_id": 1}}
         ]
-        # UNIVERSAL FIX: Use Lead.get_settings().motor_collection for all environments
-        coll = Lead.get_settings().motor_collection
+        # UNIVERSAL FIX: Use direct Motor collection to avoid Beanie version conflicts
+        coll = get_leads_collection()
         data = await coll.aggregate(pipeline).to_list(length=None)
         return {"data": data}
     except Exception as e:
@@ -193,8 +204,8 @@ async def get_buyer_stats(start_date: Optional[datetime] = None, end_date: Optio
             },
             {"$sort": {"revenue": -1}}
         ]
-        # UNIVERSAL FIX: Use Lead.get_settings().motor_collection for all environments
-        coll = Lead.get_settings().motor_collection
+        # UNIVERSAL FIX: Use direct Motor collection to avoid Beanie version conflicts
+        coll = get_leads_collection()
         data = await coll.aggregate(pipeline).to_list(length=None)
         return {"data": data}
     except Exception as e:
@@ -218,8 +229,8 @@ async def get_error_stats(start_date: Optional[datetime] = None, end_date: Optio
                 }
             }
         ]
-        # UNIVERSAL FIX: Use Lead.get_settings().motor_collection for all environments
-        coll = Lead.get_settings().motor_collection
+        # UNIVERSAL FIX: Use direct Motor collection to avoid Beanie version conflicts
+        coll = get_leads_collection()
         data = await coll.aggregate(pipeline).to_list(length=None)
         return {"data": data}
     except Exception as e:
