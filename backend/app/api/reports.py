@@ -1,9 +1,11 @@
+import logging
 from fastapi import APIRouter
 from app.models.lead import Lead, LeadStatus
 from app.models.buyer import Buyer
 from typing import Dict, Any, Optional
 from datetime import datetime, timedelta
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 @router.get("/stats")
@@ -51,34 +53,28 @@ async def get_activity_stats() -> Dict[str, Any]:
     Returns lead activity volume for the last 24 hours (or just recent buckets).
     Aggregates by hour.
     """
-    pipeline = [
-        {
-            "$group": {
-                "_id": {
-                    "year": {"$year": "$created_at"},
-                    "month": {"$month": "$created_at"},
-                    "day": {"$dayOfMonth": "$created_at"},
-                    "hour": {"$hour": "$created_at"},
-                    "status": "$status"
-                },
-                "count": {"$sum": 1}
-            }
-        },
-        {"$sort": {"_id": 1}}
-    ]
-    
-    # Note: MongoDB time aggregation requires Date objects. 
-    # Beanie stores datetime objects, so this should work if using standard PyMongo pipeline.
-    # Results will be sparse (only hours with data). Frontend will handle filling gaps.
-    
-    raw_data = await Lead.aggregate(pipeline).to_list()
-    
-    # Transform into proper time-series for frontend
-    # We want a list of points: { timestamp: ISO, sold: 10, rejected: 5, total: 15 }
-    # This is slightly complex to do perfect zero-filling in backend without huge code.
-    # Simpler approach: Return the raw sparse data, let frontend map it.
-    
-    return {"data": raw_data}
+    try:
+        pipeline = [
+            {
+                "$group": {
+                    "_id": {
+                        "year": {"$year": "$created_at"},
+                        "month": {"$month": "$created_at"},
+                        "day": {"$dayOfMonth": "$created_at"},
+                        "hour": {"$hour": "$created_at"},
+                        "status": "$status"
+                    },
+                    "count": {"$sum": 1}
+                }
+            },
+            {"$sort": {"_id": 1}}
+        ]
+        
+        raw_data = await Lead.aggregate(pipeline).to_list()
+        return {"data": raw_data}
+    except Exception as e:
+        logger.error(f"Error in get_activity_stats: {str(e)}", exc_info=True)
+        return {"data": [], "error": str(e)}
 
 
 from datetime import datetime, timedelta
@@ -90,30 +86,41 @@ async def get_today_stats() -> Dict[str, Any]:
     """
     Returns summary stats for the current day (UTC).
     """
-    today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
-    
-    # Filter for today
-    match_today = {"created_at": {"$gte": today_start}}
-    
-    total_leads = await Lead.find(match_today).count()
-    sold_leads = await Lead.find({"status": "sold", "created_at": {"$gte": today_start}}).count()
-    rejected_leads = await Lead.find({"status": "rejected", "created_at": {"$gte": today_start}}).count()
-    
-    # Revenue today
-    pipeline = [
-        {"$match": {"status": "sold", "created_at": {"$gte": today_start}}},
-        {"$group": {"_id": None, "total": {"$sum": "$sold_price"}}}
-    ]
-    revenue_result = await Lead.aggregate(pipeline).to_list()
-    total_revenue = revenue_result[0]["total"] if revenue_result else 0.0
-    
-    return {
-        "total_leads": total_leads,
-        "sold_leads": sold_leads,
-        "rejected_leads": rejected_leads,
-        "total_revenue": total_revenue,
-        "conversion_rate": (sold_leads / total_leads * 100) if total_leads > 0 else 0
-    }
+    try:
+        today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+        
+        # Filter for today
+        match_today = {"created_at": {"$gte": today_start}}
+        
+        total_leads = await Lead.find(match_today).count()
+        sold_leads = await Lead.find({"status": "sold", "created_at": {"$gte": today_start}}).count()
+        rejected_leads = await Lead.find({"status": "rejected", "created_at": {"$gte": today_start}}).count()
+        
+        # Revenue today
+        pipeline = [
+            {"$match": {"status": "sold", "created_at": {"$gte": today_start}}},
+            {"$group": {"_id": None, "total": {"$sum": "$sold_price"}}}
+        ]
+        revenue_result = await Lead.aggregate(pipeline).to_list()
+        total_revenue = revenue_result[0]["total"] if revenue_result else 0.0
+        
+        return {
+            "total_leads": total_leads,
+            "sold_leads": sold_leads,
+            "rejected_leads": rejected_leads,
+            "total_revenue": total_revenue,
+            "conversion_rate": (sold_leads / total_leads * 100) if total_leads > 0 else 0
+        }
+    except Exception as e:
+        logger.error(f"Error in get_today_stats: {str(e)}", exc_info=True)
+        return {
+            "total_leads": 0,
+            "sold_leads": 0,
+            "rejected_leads": 0,
+            "total_revenue": 0.0,
+            "conversion_rate": 0,
+            "error": str(e) # Send error to help debug
+        }
 
 def get_date_match(start_date: Optional[datetime], end_date: Optional[datetime]) -> Dict[str, Any]:
     match = {}

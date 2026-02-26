@@ -31,17 +31,32 @@ if not os.path.exists(static_dir):
 
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
+import logging
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 @app.on_event("startup")
 async def startup_event():
-    await init_db()
-    await redis_client.connect()
+    try:
+        logger.info("🚀 Starting up... connecting to MongoDB")
+        await init_db()
+        logger.info("✅ MongoDB Connected")
+        
+        logger.info("🔗 Connecting to Redis")
+        await redis_client.connect()
+        logger.info("✅ Redis Connected")
+    except Exception as e:
+        logger.error(f"❌ Startup Error: {str(e)}", exc_info=True)
 
 @app.on_event("shutdown")
 async def shutdown_event():
+    logger.info("🛑 Shutting down...")
     await redis_client.close()
 
 @app.get("/")
 async def root():
-    return {"message": "Ping Tree API is running"}
+    return {"status": "ok", "message": "Ping Tree API is operational"}
 
 app.include_router(api_router, prefix=settings.API_V1_STR)
