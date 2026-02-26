@@ -18,7 +18,7 @@
     var PingTree = {
         config: {
             apiKey: null,
-            endpoint: 'https://s.trustedagentforyou.com/api/v1/public/leads/ingest'
+            endpoint: 'https://js.trustedagentforyou.com/api/v1/public/leads/ingest'
         },
 
         init: function (apiKey, options) {

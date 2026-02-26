@@ -14,7 +14,7 @@ services:
     build: ./frontend
     restart: always
     environment:
-      - NEXT_PUBLIC_API_URL=https://s.trustedagentforyou.com/api/v1
+      - NEXT_PUBLIC_API_URL=https://js.trustedagentforyou.com/api/v1
     depends_on:
       - backend
 
