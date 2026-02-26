@@ -2,6 +2,7 @@ from fastapi import APIRouter, Header, HTTPException, status, Request
 from app.models.user import User
 from app.models.form import LeadForm
 from app.services.ping.auction_engine import auction_engine
+from datetime import datetime
 from typing import Dict, Any, Optional
 
 router = APIRouter()
@@ -42,23 +43,45 @@ async def public_ingest_lead(
         "trusted_form_token": lead_data.get("trusted_form_token")
     }
 
+    # Helper for unified response and redirection
+    async def generate_response(status: str, lead_id: Optional[str] = None, processed_at: Optional[datetime] = None, redirect_url: Optional[str] = None, reason: Optional[str] = None):
+        final_redirect = redirect_url
+        if status != "sold" and metadata.get("form_id"):
+            try:
+                form = await LeadForm.get(metadata["form_id"])
+                if form and form.reject_redirect_url:
+                    final_redirect = form.reject_redirect_url
+            except:
+                pass
+        
+        return {
+            "status": status,
+            "lead_id": lead_id,
+            "processed_at": processed_at or datetime.utcnow(),
+            "redirect_url": final_redirect,
+            **({"reason": reason} if reason else {})
+        }
+
+    # Execute Validation (Optional)
+    from app.models.validation import LeadValidationConfig
+    from app.services.validator_service import validator_service
+    
+    validation_config = await LeadValidationConfig.find_one(
+        LeadValidationConfig.user_id == str(user.id),
+        LeadValidationConfig.is_active == True
+    )
+    
+    if validation_config:
+        is_valid = await validator_service.validate_lead(validation_config, lead_data, metadata=metadata)
+        if not is_valid:
+            return await generate_response(status="rejected", reason="Validation Failed")
+
     # Execute Auction
     result = await auction_engine.run_auction(lead_data, metadata=metadata)
     
-    # Handle Reject Redirection
-    final_redirect = result.redirect_url
-    if result.status == "rejected" and metadata.get("form_id"):
-        try:
-            from bson import ObjectId
-            form = await LeadForm.get(metadata["form_id"])
-            if form and form.reject_redirect_url:
-                final_redirect = form.reject_redirect_url
-        except:
-            pass
-
-    return {
-        "status": result.status,
-        "lead_id": str(result.id),
-        "processed_at": result.created_at,
-        "redirect_url": final_redirect
-    }
+    return await generate_response(
+        status=result.status.value if hasattr(result.status, 'value') else result.status,
+        lead_id=str(result.id),
+        processed_at=result.created_at,
+        redirect_url=result.redirect_url
+    )

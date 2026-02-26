@@ -24,7 +24,7 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { LayoutDashboard, Users, BarChart3, PanelLeftClose, PanelLeftOpen, LogOut, User, Settings, List, Share2 } from 'lucide-react'
+import { LayoutDashboard, Users, BarChart3, PanelLeftClose, PanelLeftOpen, LogOut, User, Settings, List, Share2, ShieldCheck } from 'lucide-react'
 
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> { }
 
@@ -58,7 +58,8 @@ export function Sidebar({ className }: SidebarProps) {
         { label: 'Buyers', href: '/dashboard/buyers', icon: Users },
         { label: 'Leads', href: '/dashboard/leads', icon: List },
         { label: 'Ping Tree', href: '/dashboard/ping-tree', icon: Share2 },
-        { label: 'Ingestion', href: '/dashboard/ingestion', icon: Share2 }, // Using Share2 as placeholder icon if Code/Terminal not ideal
+        { label: 'Ingestion', href: '/dashboard/ingestion', icon: Share2 },
+        { label: 'Validation', href: '/dashboard/validation', icon: ShieldCheck },
         { label: 'Reports', href: '/dashboard/reports', icon: BarChart3 },
         { label: 'Settings', href: '/dashboard/settings', icon: Settings },
     ]

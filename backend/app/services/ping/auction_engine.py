@@ -172,7 +172,7 @@ class AuctionEngine:
         # Logical Fix: Register duplicate even if rejected to prevent spam execution
         await DuplicateDetectionEngine.register_lead(lead_data, lookback_days=30)
         
-        return await self.create_lead(lead_data, LeadStatus.REJECTED, trace, start_time, metadata)
+        return await self.create_lead(lead_data, LeadStatus.UNSOLD, trace, start_time, metadata)
 
     async def ping_safe(self, buyer: Buyer, lead_data: Dict[str, Any]):
         try:

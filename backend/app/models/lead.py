@@ -9,6 +9,7 @@ class LeadStatus(str, Enum):
     PROCESSING = "processing"
     SOLD = "sold"
     REJECTED = "rejected"
+    UNSOLD = "unsold"
     ERROR = "error"
 
 class Lead(Document):
