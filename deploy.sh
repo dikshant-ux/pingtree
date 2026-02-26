@@ -1,7 +1,13 @@
 #!/bin/bash
 
 # Configuration
-DOMAIN="js.trustedagentforyou.com"
+if [ -f "backend/.env" ]; then
+    # Load DOMAIN from backend/.env (assuming it might be BASE_URL or FRONTEND_URL)
+    # Extracting the host from BASE_URL
+    DOMAIN=$(grep BASE_URL backend/.env | cut -d'=' -f2 | sed 's/https\?:\/\///' | sed 's/\/.*//')
+else
+    DOMAIN="js.trustedagentforyou.com"
+fi
 EMAIL="dikshantbhatiya21@gmail.com"
 
 echo "🚀 Starting Production Deployment for $DOMAIN"

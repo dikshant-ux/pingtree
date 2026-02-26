@@ -17,6 +17,9 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     
+    BASE_URL: str = "https://js.trustedagentforyou.com"
+    FRONTEND_URL: str = "https://js.trustedagentforyou.com"
+    
     class Config:
         env_file = ".env"
 

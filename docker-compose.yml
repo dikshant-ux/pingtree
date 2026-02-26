@@ -6,6 +6,8 @@ services:
       - MONGODB_URL=mongodb://mongodb:27017
       - DATABASE_NAME=pingtree_db
       - REDIS_URL=redis://redis:6379
+      - BASE_URL=${BASE_URL:-https://js.trustedagentforyou.com}
+      - FRONTEND_URL=${FRONTEND_URL:-https://js.trustedagentforyou.com}
     depends_on:
       - mongodb
       - redis
@@ -14,7 +16,7 @@ services:
     build: ./frontend
     restart: always
     environment:
-      - NEXT_PUBLIC_API_URL=https://js.trustedagentforyou.com/api/v1
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-https://js.trustedagentforyou.com/api/v1}
     depends_on:
       - backend
 

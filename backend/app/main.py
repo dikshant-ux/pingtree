@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.api.api import api_router
@@ -30,6 +30,24 @@ if not os.path.exists(static_dir):
     os.makedirs(static_dir)
 
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
+
+@app.get("/static/pingtree.js")
+async def get_pingtree_js():
+    js_path = os.path.join(static_dir, "pingtree.js")
+    if not os.path.exists(js_path):
+        return Response(content="// PingTree script not found", media_type="application/javascript")
+    
+    with open(js_path, "r") as f:
+        content = f.read()
+    
+    # Inject the environment-specific endpoint
+    endpoint = f"{settings.BASE_URL}{settings.API_V1_STR}/public/leads/ingest"
+    content = content.replace(
+        "endpoint: 'https://js.trustedagentforyou.com/api/v1/public/leads/ingest'",
+        f"endpoint: '{endpoint}'"
+    )
+    
+    return Response(content=content, media_type="application/javascript")
 
 import logging
 
