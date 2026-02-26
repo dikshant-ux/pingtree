@@ -45,11 +45,7 @@ export default function IngestionPage() {
     const [baseUrl, setBaseUrl] = useState<string>('');
 
     useEffect(() => {
-        // Derive base URL from NEXT_PUBLIC_API_URL or window.location
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
-        if (apiUrl) {
-            setBaseUrl(apiUrl.replace('/api/v1', ''));
-        } else if (typeof window !== 'undefined') {
+        if (typeof window !== 'undefined') {
             setBaseUrl(window.location.origin);
         }
     }, []);
