@@ -31,7 +31,8 @@ async def get_dashboard_stats(start_date: Optional[datetime] = None, end_date: O
         {"$match": sold_query},
         {"$group": {"_id": None, "total": {"$sum": "$sold_price"}}}
     ]
-    revenue_result = await Lead.aggregate(pipeline).to_list()
+    # Use motor collection directly for stable aggregation in all environments
+    revenue_result = await Lead.get_motor_collection().aggregate(pipeline).to_list(length=None)
     total_revenue = revenue_result[0]["total"] if revenue_result else 0.0
     
     return {
@@ -70,7 +71,7 @@ async def get_activity_stats() -> Dict[str, Any]:
             {"$sort": {"_id": 1}}
         ]
         
-        raw_data = await Lead.aggregate(pipeline).to_list()
+        raw_data = await Lead.get_motor_collection().aggregate(pipeline).to_list(length=None)
         return {"data": raw_data}
     except Exception as e:
         logger.error(f"Error in get_activity_stats: {str(e)}", exc_info=True)
@@ -101,7 +102,7 @@ async def get_today_stats() -> Dict[str, Any]:
             {"$match": {"status": "sold", "created_at": {"$gte": today_start}}},
             {"$group": {"_id": None, "total": {"$sum": "$sold_price"}}}
         ]
-        revenue_result = await Lead.aggregate(pipeline).to_list()
+        revenue_result = await Lead.get_motor_collection().aggregate(pipeline).to_list(length=None)
         total_revenue = revenue_result[0]["total"] if revenue_result else 0.0
         
         return {
@@ -155,7 +156,7 @@ async def get_revenue_stats(start_date: Optional[datetime] = None, end_date: Opt
         },
         {"$sort": {"_id": 1}}
     ]
-    data = await Lead.aggregate(pipeline).to_list()
+    data = await Lead.get_motor_collection().aggregate(pipeline).to_list(length=None)
     return {"data": data}
 
 
@@ -206,7 +207,7 @@ async def get_buyer_stats(start_date: Optional[datetime] = None, end_date: Optio
         },
         {"$sort": {"revenue": -1}}
     ]
-    data = await Lead.aggregate(pipeline).to_list()
+    data = await Lead.get_motor_collection().aggregate(pipeline).to_list(length=None)
     return {"data": data}
 
 
@@ -226,5 +227,5 @@ async def get_error_stats(start_date: Optional[datetime] = None, end_date: Optio
             }
         }
     ]
-    data = await Lead.aggregate(pipeline).to_list()
+    data = await Lead.get_motor_collection().aggregate(pipeline).to_list(length=None)
     return {"data": data}
