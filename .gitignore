@@ -1,0 +1,46 @@
+# Dependencies
+node_modules/
+venv/
+.venv/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Next.js
+.next/
+out/
+
+# Build outputs
+build/
+dist/
+*.exe
+*.dll
+
+# Environment / Secret files
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Docker
+.docker/
+docker-compose.override.yml
+
+# System Files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Local Simulation / Testing
+buyer_simulator/
+publisher_server/
+test.html
+test2.html

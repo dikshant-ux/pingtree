@@ -1,0 +1,57 @@
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6366f1;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#a855f7;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Central Hub -->
+  <circle cx="100" cy="100" r="18" stroke="url(#grad)" stroke-width="6" fill="none"/>
+  <circle cx="100" cy="100" r="8" fill="url(#grad)"/>
+
+  <!-- Main Vertical/Horizontal Rays -->
+  <path d="M100 75 V 45" stroke="url(#grad)" stroke-width="5" stroke-linecap="round"/>
+  <path d="M100 125 V 155" stroke="url(#grad)" stroke-width="5" stroke-linecap="round"/>
+  <path d="M75 100 H 45" stroke="url(#grad)" stroke-width="5" stroke-linecap="round"/>
+  <path d="M125 100 H 155" stroke="url(#grad)" stroke-width="5" stroke-linecap="round"/>
+
+  <!-- Diagonal Rays -->
+  <path d="M82 82 L 60 60" stroke="url(#grad)" stroke-width="5" stroke-linecap="round"/>
+  <path d="M118 82 L 140 60" stroke="url(#grad)" stroke-width="5" stroke-linecap="round"/>
+  <path d="M82 118 L 60 140" stroke="url(#grad)" stroke-width="5" stroke-linecap="round"/>
+  <path d="M118 118 L 140 140" stroke="url(#grad)" stroke-width="5" stroke-linecap="round"/>
+
+  <!-- Inner Branching (Stars) -->
+  <path d="M100 75 L 85 85" stroke="url(#grad)" stroke-width="3" stroke-linecap="round"/>
+  <path d="M100 75 L 115 85" stroke="url(#grad)" stroke-width="3" stroke-linecap="round"/>
+  <path d="M100 125 L 85 115" stroke="url(#grad)" stroke-width="3" stroke-linecap="round"/>
+  <path d="M100 125 L 115 115" stroke="url(#grad)" stroke-width="3" stroke-linecap="round"/>
+  <path d="M75 100 L 85 85" stroke="url(#grad)" stroke-width="3" stroke-linecap="round"/>
+  <path d="M75 100 L 85 115" stroke="url(#grad)" stroke-width="3" stroke-linecap="round"/>
+  <path d="M125 100 L 115 85" stroke="url(#grad)" stroke-width="3" stroke-linecap="round"/>
+  <path d="M125 100 L 115 115" stroke="url(#grad)" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- Outer Triangles/Nodes -->
+  <!-- Top -->
+  <path d="M100 45 L 94 35 L 106 35 Z" fill="url(#grad)" transform="translate(0, -5)"/>
+  <!-- Bottom -->
+  <path d="M100 155 L 94 165 L 106 165 Z" fill="url(#grad)" transform="translate(0, 5)"/>
+  <!-- Left -->
+  <path d="M45 100 L 35 94 L 35 106 Z" fill="url(#grad)" transform="translate(-5, 0)"/>
+  <!-- Right -->
+  <path d="M155 100 L 165 94 L 165 106 Z" fill="url(#grad)" transform="translate(5, 0)"/>
+
+  <!-- Diagonal Circles -->
+  <circle cx="55" cy="55" r="6" fill="none" stroke="url(#grad)" stroke-width="3"/>
+  <circle cx="145" cy="55" r="6" fill="none" stroke="url(#grad)" stroke-width="3"/>
+  <circle cx="55" cy="145" r="6" fill="none" stroke="url(#grad)" stroke-width="3"/>
+  <circle cx="145" cy="145" r="6" fill="none" stroke="url(#grad)" stroke-width="3"/>
+
+  <!-- Connector Lines for Sub-branches -->
+  <path d="M60 60 L 55 55" stroke="url(#grad)" stroke-width="3"/>
+  <path d="M140 60 L 145 55" stroke="url(#grad)" stroke-width="3"/>
+  <path d="M60 140 L 55 145" stroke="url(#grad)" stroke-width="3"/>
+  <path d="M140 140 L 145 145" stroke="url(#grad)" stroke-width="3"/>
+
+</svg>

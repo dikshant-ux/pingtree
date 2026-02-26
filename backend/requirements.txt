@@ -1,0 +1,13 @@
+fastapi
+uvicorn[standard]
+motor>=3.1.0
+beanie>=1.25.0
+redis>=4.2.0
+pydantic[email]
+python-jose[cryptography]
+passlib[bcrypt]
+bcrypt==3.2.2
+python-multipart
+httpx
+pydantic-settings
+pyotp==2.9.0
