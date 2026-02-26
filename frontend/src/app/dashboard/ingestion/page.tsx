@@ -42,6 +42,17 @@ export default function IngestionPage() {
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [newForm, setNewForm] = useState({ name: '', title: '', primary_color: '#28a745', reject_redirect_url: '' });
     const [selectedForm, setSelectedForm] = useState<LeadForm | null>(null);
+    const [baseUrl, setBaseUrl] = useState<string>('');
+
+    useEffect(() => {
+        // Derive base URL from NEXT_PUBLIC_API_URL or window.location
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+        if (apiUrl) {
+            setBaseUrl(apiUrl.replace('/api/v1', ''));
+        } else if (typeof window !== 'undefined') {
+            setBaseUrl(window.location.origin);
+        }
+    }, []);
 
     useEffect(() => {
         init();
@@ -123,7 +134,7 @@ export default function IngestionPage() {
     };
 
     // Embed Snippets
-    const getEmbedCode = (formId?: string) => `<script src="http://localhost:8000/static/pingtree.js"></script>
+    const getEmbedCode = (formId?: string) => `<script src="${baseUrl}/static/pingtree.js"></script>
 <script>
     PingTree.init("${apiKey || 'YOUR_API_KEY'}");
 </script>`;
@@ -157,7 +168,7 @@ export default function IngestionPage() {
     return (
         <div className="space-y-6 max-w-6xl">
             <Script
-                src="http://localhost:8000/static/pingtree.js"
+                src={`${baseUrl}/static/pingtree.js`}
                 onLoad={() => setIsScriptLoaded(true)}
             />
 
