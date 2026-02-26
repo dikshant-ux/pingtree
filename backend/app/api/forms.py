@@ -12,6 +12,7 @@ class LeadFormCreate(BaseModel):
     title: str
     primary_color: str = "#28a745"
     allowed_domains: List[str] = []
+    reject_redirect_url: Optional[str] = None
 
 class LeadFormUpdate(BaseModel):
     name: Optional[str] = None
@@ -19,6 +20,7 @@ class LeadFormUpdate(BaseModel):
     primary_color: Optional[str] = None
     allowed_domains: Optional[List[str]] = None
     is_active: Optional[bool] = None
+    reject_redirect_url: Optional[str] = None
 
 @router.get("/", response_model=List[LeadForm])
 async def get_forms(current_user: User = Depends(get_current_active_user)):

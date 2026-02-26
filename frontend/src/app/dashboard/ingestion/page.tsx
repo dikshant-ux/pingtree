@@ -40,7 +40,9 @@ export default function IngestionPage() {
     // Multi-Form State
     const [forms, setForms] = useState<LeadForm[]>([]);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [newForm, setNewForm] = useState({ name: '', title: '', primary_color: '#28a745', reject_redirect_url: '' });
+    const [editingForm, setEditingForm] = useState<LeadForm | null>(null);
     const [selectedForm, setSelectedForm] = useState<LeadForm | null>(null);
     const [baseUrl, setBaseUrl] = useState<string>('');
 
@@ -96,6 +98,27 @@ export default function IngestionPage() {
             toast.success("Form Created Successfully");
         } catch (err) {
             toast.error("Failed to create form");
+        }
+    };
+
+    const handleEditClick = (form: LeadForm, e: React.MouseEvent) => {
+        e.stopPropagation();
+        setEditingForm({ ...form });
+        setIsEditModalOpen(true);
+    };
+
+    const handleUpdateForm = async () => {
+        if (!editingForm) return;
+        try {
+            const res = await api.patch(`/forms/${editingForm._id}`, editingForm);
+            setForms(forms.map(f => f._id === editingForm._id ? res.data : f));
+            if (selectedForm?._id === editingForm._id) {
+                setSelectedForm(res.data);
+            }
+            setIsEditModalOpen(false);
+            toast.success("Form Updated Successfully");
+        } catch (err) {
+            toast.error("Failed to update form");
         }
     };
 
@@ -212,6 +235,9 @@ export default function IngestionPage() {
                                             <p className="text-[10px] text-muted-foreground uppercase tracking-widest">{form._id.slice(-8)}</p>
                                         </div>
                                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100">
+                                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => handleEditClick(form, e)}>
+                                                <Edit2 className="h-3 w-3 text-primary" />
+                                            </Button>
                                             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => handleDeleteForm(form._id, e)}>
                                                 <Trash2 className="h-3 w-3 text-destructive" />
                                             </Button>
@@ -398,6 +424,66 @@ export default function IngestionPage() {
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setIsCreateModalOpen(false)}>Cancel</Button>
                         <Button onClick={handleCreateForm} disabled={!newForm.name || !newForm.title}>Create Form</Button>
+                    </DialogFooter>
+                </DialogContent >
+            </Dialog >
+
+            {/* Edit Form Modal */}
+            <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Edit Lead Form</DialogTitle>
+                        <DialogDescription>
+                            Update your form configuration and themes.
+                        </DialogDescription>
+                    </DialogHeader>
+                    {editingForm && (
+                        <div className="space-y-4 py-4">
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium">Internal Name</label>
+                                <Input
+                                    placeholder="e.g. Finance Site Landing Page"
+                                    value={editingForm.name}
+                                    onChange={(e) => setEditingForm({ ...editingForm, name: e.target.value })}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium">Public Title</label>
+                                <Input
+                                    placeholder="e.g. Get a Loan in Minutes"
+                                    value={editingForm.title}
+                                    onChange={(e) => setEditingForm({ ...editingForm, title: e.target.value })}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium">Theme Color</label>
+                                <div className="flex gap-2">
+                                    <Input
+                                        type="color"
+                                        className="w-12 h-10 p-1"
+                                        value={editingForm.primary_color}
+                                        onChange={(e) => setEditingForm({ ...editingForm, primary_color: e.target.value })}
+                                    />
+                                    <Input
+                                        value={editingForm.primary_color}
+                                        onChange={(e) => setEditingForm({ ...editingForm, primary_color: e.target.value })}
+                                    />
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-destructive">Reject Redirection URL (Optional)</label>
+                                <Input
+                                    placeholder="e.g. https://yoursite.com/thank-you"
+                                    value={editingForm.reject_redirect_url || ''}
+                                    onChange={(e) => setEditingForm({ ...editingForm, reject_redirect_url: e.target.value })}
+                                />
+                                <p className="text-[10px] text-muted-foreground italic">Users will be redirected here if no buyers buy the lead.</p>
+                            </div>
+                        </div>
+                    )}
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>Cancel</Button>
+                        <Button onClick={handleUpdateForm} disabled={!editingForm?.name || !editingForm?.title}>Save Changes</Button>
                     </DialogFooter>
                 </DialogContent >
             </Dialog >
