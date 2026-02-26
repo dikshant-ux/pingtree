@@ -1,4 +1,4 @@
-# Version: 2026-02-26-v2 - Direct Motor Aggregation Fix
+# Version: 2026-02-26-v3 - Final Beanie Collection Fix
 import logging
 from typing import Dict, Any, Optional
 from datetime import datetime
@@ -36,8 +36,9 @@ async def get_dashboard_stats(start_date: Optional[datetime] = None, end_date: O
             {"$group": {"_id": None, "total": {"$sum": "$sold_price"}}}
         ]
         
-        # FIX: Using get_motor_collection() to bypass Beanie cursor TypeError in production
-        revenue_result = await Lead.get_motor_collection().aggregate(pipeline).to_list(length=None)
+        # UNIVERSAL FIX: Use Lead.get_settings().motor_collection for all environments
+        coll = Lead.get_settings().motor_collection
+        revenue_result = await coll.aggregate(pipeline).to_list(length=None)
         total_revenue = revenue_result[0]["total"] if revenue_result else 0.0
         
         return {
@@ -66,8 +67,9 @@ async def get_today_stats() -> Dict[str, Any]:
             {"$group": {"_id": None, "total": {"$sum": "$sold_price"}}}
         ]
         
-        # FIX: Using get_motor_collection() to bypass Beanie cursor TypeError in production
-        revenue_result = await Lead.get_motor_collection().aggregate(pipeline).to_list(length=None)
+        # UNIVERSAL FIX: Use Lead.get_settings().motor_collection for all environments
+        coll = Lead.get_settings().motor_collection
+        revenue_result = await coll.aggregate(pipeline).to_list(length=None)
         total_revenue = revenue_result[0]["total"] if revenue_result else 0.0
         
         return {
@@ -100,8 +102,9 @@ async def get_activity_stats() -> Dict[str, Any]:
             {"$sort": {"_id": 1}}
         ]
         
-        # FIX: Using get_motor_collection() to bypass Beanie cursor TypeError in production
-        raw_data = await Lead.get_motor_collection().aggregate(pipeline).to_list(length=None)
+        # UNIVERSAL FIX: Use Lead.get_settings().motor_collection for all environments
+        coll = Lead.get_settings().motor_collection
+        raw_data = await coll.aggregate(pipeline).to_list(length=None)
         return {"data": raw_data}
     except Exception as e:
         logger.error(f"Error in get_activity_stats: {str(e)}", exc_info=True)
@@ -134,8 +137,9 @@ async def get_revenue_stats(start_date: Optional[datetime] = None, end_date: Opt
             },
             {"$sort": {"_id": 1}}
         ]
-        # FIX: Using get_motor_collection() to bypass Beanie cursor TypeError in production
-        data = await Lead.get_motor_collection().aggregate(pipeline).to_list(length=None)
+        # UNIVERSAL FIX: Use Lead.get_settings().motor_collection for all environments
+        coll = Lead.get_settings().motor_collection
+        data = await coll.aggregate(pipeline).to_list(length=None)
         return {"data": data}
     except Exception as e:
         logger.error(f"Error in get_revenue_stats: {str(e)}", exc_info=True)
@@ -189,8 +193,9 @@ async def get_buyer_stats(start_date: Optional[datetime] = None, end_date: Optio
             },
             {"$sort": {"revenue": -1}}
         ]
-        # FIX: Using get_motor_collection() to bypass Beanie cursor TypeError in production
-        data = await Lead.get_motor_collection().aggregate(pipeline).to_list(length=None)
+        # UNIVERSAL FIX: Use Lead.get_settings().motor_collection for all environments
+        coll = Lead.get_settings().motor_collection
+        data = await coll.aggregate(pipeline).to_list(length=None)
         return {"data": data}
     except Exception as e:
         logger.error(f"Error in get_buyer_stats: {str(e)}", exc_info=True)
@@ -213,8 +218,9 @@ async def get_error_stats(start_date: Optional[datetime] = None, end_date: Optio
                 }
             }
         ]
-        # FIX: Using get_motor_collection() to bypass Beanie cursor TypeError in production
-        data = await Lead.get_motor_collection().aggregate(pipeline).to_list(length=None)
+        # UNIVERSAL FIX: Use Lead.get_settings().motor_collection for all environments
+        coll = Lead.get_settings().motor_collection
+        data = await coll.aggregate(pipeline).to_list(length=None)
         return {"data": data}
     except Exception as e:
         logger.error(f"Error in get_error_stats: {str(e)}", exc_info=True)
