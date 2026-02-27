@@ -160,6 +160,19 @@
                 data.captured_ip = this.config.publicIP;
             }
 
+            // Capture User-Agent
+            data.User_Agent = navigator.userAgent;
+
+            // Capture Tracking Parameters from URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const trackingParams = [
+                'gclid', 'fbp', 'fbc', 'utm_source', 'utm_medium', 'utm_campaign',
+                'utm_term', 'utm_content', 'eventid', 'unique_id', 'subsource', 'source'
+            ];
+            trackingParams.forEach(param => {
+                data[param] = urlParams.get(param) || "";
+            });
+
             console.log('PingTree: Final data for submission:', data);
 
             try {

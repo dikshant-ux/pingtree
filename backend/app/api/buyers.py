@@ -84,36 +84,9 @@ async def test_buyer_integration(request: BuyerTestRequest):
             
         logs.append(f"[CONFIG] Target URL: {target_url}")
         
-        # 2. Apply Mapping
-        mapped_payload = {}
-        mappings = []
-        if request.mode == "ping":
-            mappings = config.get("ping_mapping", [])
-        else:
-            mappings = config.get("post_mapping", [])
-            
-        # Fallback to field_mapping if specific ones are empty
-        if not mappings:
-             mappings = config.get("field_mapping", [])
-
-        logs.append(f"[MAPPING] Found {len(mappings)} mapping rules")
-        
-        for rule in mappings:
-            internal = rule.get("internal_field")
-            buyer_field = rule.get("buyer_field")
-            static_val = rule.get("static_value")
-            
-            val = None
-            if static_val is not None:
-                val = static_val
-            else:
-                # Simple lookup (nested support could be added)
-                val = request.payload.get(internal)
-            
-            if val is not None:
-                mapped_payload[buyer_field] = val
-        
-        logs.append(f"[MAPPING] Generated payload with {len(mapped_payload)} keys")
+        # 2. Apply Mapping (Bypassed for Test Input)
+        mapped_payload = request.payload.copy()
+        logs.append(f"[MAPPING] Bypassed mapping rules. Using raw input payload.")
         
         # 3. Prepare Request (Headers)
         headers = config.get("headers", {}).copy()

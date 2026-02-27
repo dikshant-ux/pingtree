@@ -20,6 +20,8 @@ export default function Step4_Mapping({ data, updateData }: Step4Props) {
     const [availableFields, setAvailableFields] = useState<string[]>([
         "First_Name", "Last_Name", "Email", "Phone", "Address", "City", "State", "Zip",
         "Dob", "Gender", "Ip_Address", "User_Agent", "click_id",
+        "gclid", "fbp", "fbc", "utm_source", "utm_medium", "utm_campaign",
+        "utm_term", "utm_content", "eventid", "unique_id", "subsource", "source",
         "loanAmount", "loanPurpose", "dob_mm", "dob_dd", "dob_yyyy", "SSN",
         "payFrequency", "nextPayDate", "bankAccountType", "incomeMethod", "incomeType",
         "isMilitary", "Employer", "incomeNetMonthly", "debtAssistance", "creditRating",
@@ -66,6 +68,8 @@ export default function Step4_Mapping({ data, updateData }: Step4Props) {
         const standardFields = [
             "First_Name", "Last_Name", "Email", "Phone", "Address", "City", "State", "Zip",
             "Dob", "Gender", "Ip_Address", "User_Agent", "click_id",
+            "gclid", "fbp", "fbc", "utm_source", "utm_medium", "utm_campaign",
+            "utm_term", "utm_content", "eventid", "unique_id", "subsource", "source",
             "loanAmount", "loanPurpose", "dob_mm", "dob_dd", "dob_yyyy", "SSN",
             "payFrequency", "nextPayDate", "bankAccountType", "incomeMethod", "incomeType",
             "isMilitary", "Employer", "incomeNetMonthly", "debtAssistance", "creditRating",

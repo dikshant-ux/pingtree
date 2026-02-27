@@ -43,17 +43,20 @@ async def public_ingest_lead(
     else:
         header_ip = request.headers.get("x-real-ip") or (request.client.host if request.client else None)
     
-    # Prioritize client-side captured IP if provided
+    # Prioritize client-side captured IP/UA if provided
     ip_address = lead_data.pop("captured_ip", header_ip)
+    user_agent = lead_data.get("User_Agent") or request.headers.get("user-agent")
     
-    # Inject IP into lead data for processing/filtering
+    # Inject into lead data for processing/filtering/mapping
     lead_data["ip"] = ip_address
+    lead_data["User_Agent"] = user_agent
     
     metadata = {
         "form_id": lead_data.pop("form_id", None),
         "source_url": referer,
         "source_domain": referer.split('/')[2] if referer and '//' in referer else None,
         "ip_address": ip_address,
+        "user_agent": user_agent,
         "trusted_form_url": lead_data.get("trusted_form_url"),
         "trusted_form_token": lead_data.get("trusted_form_token")
     }
