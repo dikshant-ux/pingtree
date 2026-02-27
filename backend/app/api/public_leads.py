@@ -34,7 +34,17 @@ async def public_ingest_lead(
 
     # Metadata extraction
     referer = request.headers.get("referer")
-    ip_address = request.client.host if request.client else None
+    
+    # Robust IP extraction from headers (for VPS/Docker/Nginx)
+    forwarded_for = request.headers.get("x-forwarded-for")
+    header_ip = None
+    if forwarded_for:
+        header_ip = forwarded_for.split(",")[0].strip()
+    else:
+        header_ip = request.headers.get("x-real-ip") or (request.client.host if request.client else None)
+    
+    # Prioritize client-side captured IP if provided
+    ip_address = lead_data.pop("captured_ip", header_ip)
     
     # Inject IP into lead data for processing/filtering
     lead_data["ip"] = ip_address

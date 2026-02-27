@@ -20,6 +20,7 @@
             apiKey: null,
             formId: null,
             formConfig: null,
+            publicIP: null,
             endpoint: 'https://js.trustedagentforyou.com/api/v1/public/leads/ingest'
         },
 
@@ -28,12 +29,27 @@
             if (options.endpoint) {
                 this.config.endpoint = options.endpoint;
             }
+
+            // Capture Public IP early
+            this.getPublicIP();
+
             if (options.formId) {
                 this.config.formId = options.formId;
                 await this.fetchFormConfig();
                 await this.loadExternalScripts();
             }
             console.log('PingTree Ingestion Script Initialized');
+        },
+
+        getPublicIP: async function () {
+            try {
+                const res = await fetch('https://api.ipify.org?format=json');
+                const data = await res.json();
+                this.config.publicIP = data.ip;
+                console.log('PingTree: Captured Client IP:', data.ip);
+            } catch (e) {
+                console.warn('PingTree: Could not capture client IP via JS', e);
+            }
         },
 
         fetchFormConfig: async function () {
@@ -103,6 +119,11 @@
             if (this.config.formConfig) {
                 const clickIds = this.captureClickIds();
                 Object.assign(data, clickIds);
+            }
+
+            // Inject Client-Side captured IP if available
+            if (this.config.publicIP) {
+                data.captured_ip = this.config.publicIP;
             }
 
             try {
