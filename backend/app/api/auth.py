@@ -30,7 +30,8 @@ class TwoFactorVerify(BaseModel):
 @router.post("/login/access-token", response_model=Token)
 async def login_access_token(
     form_data: OAuth2PasswordRequestForm = Depends(),
-    otp_code: Optional[str] = Form(None)
+    otp_code: Optional[str] = Form(None),
+    remember_me: bool = Form(False)
 ):
     user = await User.find_one(User.email == form_data.username)
     if not user or not verify_password(form_data.password, user.password_hash):
@@ -57,7 +58,10 @@ async def login_access_token(
                 detail="Invalid 2FA code",
             )
 
-    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    if remember_me:
+        access_token_expires = timedelta(days=30)
+    else:
+        access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
         subject=user.email, expires_delta=access_token_expires
     )

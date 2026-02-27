@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/lib/api';
-import { Mail, Lock, ArrowRight, Loader2, Eye, EyeOff, ShieldCheck } from 'lucide-react';
+import { Mail, Lock, ArrowRight, Loader2, Eye, EyeOff, ShieldCheck, CheckCircle2 } from 'lucide-react';
 import AuthLayout from '@/components/auth/AuthLayout';
 
 export default function LoginPage() {
@@ -16,6 +16,7 @@ export default function LoginPage() {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [showTwoFactor, setShowTwoFactor] = useState(false);
+    const [rememberMe, setRememberMe] = useState(true);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -26,6 +27,7 @@ export default function LoginPage() {
             const formData = new FormData();
             formData.append('username', email);
             formData.append('password', password);
+            formData.append('remember_me', rememberMe.toString());
 
             if (showTwoFactor) {
                 formData.append('otp_code', otpCode);
@@ -36,7 +38,13 @@ export default function LoginPage() {
             });
 
             const { access_token } = res.data;
-            localStorage.setItem('token', access_token);
+            if (rememberMe) {
+                localStorage.setItem('token', access_token);
+                sessionStorage.removeItem('token');
+            } else {
+                sessionStorage.setItem('token', access_token);
+                localStorage.removeItem('token');
+            }
             router.push('/dashboard');
         } catch (err: any) {
             if (err.response?.status === 403 && err.response?.data?.detail === "2FA_REQUIRED") {
@@ -148,6 +156,25 @@ export default function LoginPage() {
                                     Forgot password?
                                 </Link>
                             </div>
+                        </div>
+
+                        <div className="flex items-center justify-between px-1">
+                            <label className="flex items-center group cursor-pointer">
+                                <div className="relative flex items-center">
+                                    <input
+                                        type="checkbox"
+                                        checked={rememberMe}
+                                        onChange={(e) => setRememberMe(e.target.checked)}
+                                        className="peer sr-only"
+                                    />
+                                    <div className="h-5 w-5 bg-secondary/50 border border-border rounded-md peer-checked:bg-indigo-600 peer-checked:border-indigo-600 transition-all flex items-center justify-center">
+                                        <CheckCircle2 className={`h-3.5 w-3.5 text-white transition-opacity ${rememberMe ? 'opacity-100' : 'opacity-0'}`} />
+                                    </div>
+                                    <span className="ml-2.5 text-xs text-muted-foreground group-hover:text-foreground transition-colors">
+                                        Remember me
+                                    </span>
+                                </div>
+                            </label>
                         </div>
                     </div>
                 )}
