@@ -81,7 +81,14 @@ export default function Step7_TestConsole({ data }: Step7Props) {
                     success_field: data.response_parser.success.path,
                     success_value: data.response_parser.success.value,
                     price_field: data.response_parser.price_path,
-                    redirect_url_field: data.response_parser.redirect_url_path
+                    redirect_url_field: data.response_parser.redirect_url_path,
+                    reason_field: data.response_parser.reason_path,
+                    custom_fields: data.response_parser.custom_fields.reduce((acc, curr) => {
+                        if (curr.key && curr.path) acc[curr.key] = curr.path;
+                        return acc;
+                    }, {
+                        ...(data.response_parser.lead_id_path ? { "lead_id": data.response_parser.lead_id_path } : {})
+                    } as Record<string, string>)
                 }
             };
 

@@ -113,42 +113,39 @@ async def test_buyer_integration(request: BuyerTestRequest):
                 except:
                     resp_body = {"raw": response.text}
                 
-                # 5. Parse Response
-                parsed_result = {}
-                parse_rules = config.get("response_parsing")
-                is_success = False
+                # 5. Parse Response using BuyerClient logic
+                from app.services.ping.buyer_client import BuyerClient
+                buyer_client = BuyerClient()
                 
-                if parse_rules:
-                    success_field = parse_rules.get("success_field")
-                    success_val = parse_rules.get("success_value")
-                    
-                    # Logic to find field in response (simple flat or nested)
-                    # For now assumes flat or simple dot notation for top level
-                    actual_val = resp_body.get(success_field) # TODO: Support nested path
-                    
-                    if str(actual_val) == str(success_val):
-                        is_success = True
-                        logs.append(f"[PARSER] Success matched: {success_field}={actual_val}")
-                    else:
-                        logs.append(f"[PARSER] Success failed: Expected {success_field}={success_val}, got {actual_val}")
-                        
-                    # Extraction
-                    if parse_rules.get("price_field"):
-                        parsed_result["price"] = resp_body.get(parse_rules.get("price_field"))
-                    if parse_rules.get("redirect_url_field"):
-                        parsed_result["redirect_url"] = resp_body.get(parse_rules.get("redirect_url_field"))
-                        
-                    # Custom Fields Extraction
-                    custom_fields = parse_rules.get("custom_fields", {})
-                    if custom_fields:
-                        parsed_result["custom"] = {}
-                        for key, path in custom_fields.items():
-                            # Simple flat extraction for now, can extend to nested if needed
-                            parsed_result["custom"][key] = resp_body.get(path)
-                else:
-                    # Default success if 200 OK and no rules
-                    is_success = response.status_code >= 200 and response.status_code < 300
-                    logs.append(f"[PARSER] No rules. defaulted success based on status code.")
+                # Mock a Buyer object for parse_response
+                # We can't easily valid_config = Buyer(**config) if it's partial
+                # but parse_response only needs buyer.response_parsing and buyer.payout
+                class MockBuyer:
+                    def __init__(self, cfg):
+                        from app.models.buyer import ResponseParsingRule
+                        self.payout = cfg.get("payout", 0.0)
+                        rp = cfg.get("response_parsing")
+                        self.response_parsing = ResponseParsingRule(**rp) if rp else None
+                
+                temp_buyer = MockBuyer(config)
+                is_success, price, redirect, reason, _ = buyer_client.parse_response(temp_buyer, response)
+                
+                parsed_result = {
+                    "price": price,
+                    "redirect_url": redirect,
+                    "reason": reason
+                }
+
+                # Custom Fields Extraction
+                custom_fields = config.get("response_parsing", {}).get("custom_fields", {})
+                if custom_fields:
+                    parsed_result["custom"] = {}
+                    for key, path in custom_fields.items():
+                        parsed_result["custom"][key] = buyer_client.get_nested(resp_body, path)
+
+                logs.append(f"[PARSER] Result: {'Success' if is_success else 'Failed'}")
+                logs.append(f"[PARSER] Reason: {reason}")
+                if price: logs.append(f"[PARSER] Price: {price}")
 
                 return {
                     "status": "success" if is_success else "rejected",

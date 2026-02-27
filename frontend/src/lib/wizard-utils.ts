@@ -104,6 +104,7 @@ export function transformBackendToWizard(buyer: Buyer): WizardBuyerConfig {
             price_path: buyer.response_parsing?.price_field,
             lead_id_path: buyer.response_parsing?.custom_fields?.['lead_id'],
             redirect_url_path: buyer.response_parsing?.redirect_url_field,
+            reason_path: buyer.response_parsing?.reason_field,
             custom_fields: buyer.response_parsing?.custom_fields
                 ? Object.entries(buyer.response_parsing.custom_fields).map(([key, path]) => ({ key, path: path as string }))
                 : []
