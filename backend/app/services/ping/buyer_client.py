@@ -98,14 +98,42 @@ class BuyerClient:
 
     def transform_payload(self, lead_data: Dict[str, Any], mapping: list) -> Dict[str, Any]:
         if not mapping:
-            return lead_data.copy()
+            # Fallback for when no mapping is provided - still apply capitalization
+            payload = lead_data.copy()
+            return self._capitalize_payload(payload)
+            
         payload = {}
         for rule in mapping:
+            val = None
             if rule.static_value is not None:
-                payload[rule.buyer_field] = rule.static_value
+                val = rule.static_value
             elif rule.internal_field in lead_data:
-                payload[rule.buyer_field] = lead_data[rule.internal_field]
-        return payload
+                val = lead_data[rule.internal_field]
+            
+            if val is not None:
+                payload[rule.buyer_field] = val
+                
+        return self._capitalize_payload(payload)
+
+    def _capitalize_payload(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Uppercases all string values in the payload except for system fields.
+        """
+        exclude_fields = {
+            "User_Agent", "user_agent", "UA", 
+            "source_url", "source_domain", 
+            "trusted_form_url", "trusted_form_token", "xxTrustedFormCertUrl",
+            "cert_url", "ping_url", "redirect_url", "click_id", "rtkclickid",
+            "gclid", "fbp", "fbc"
+        }
+        
+        capitalized = {}
+        for k, v in payload.items():
+            if isinstance(v, str) and k not in exclude_fields and not v.startswith("http"):
+                capitalized[k] = v.upper()
+            else:
+                capitalized[k] = v
+        return capitalized
 
     def parse_response(self, buyer: Buyer, response: httpx.Response) -> Tuple[bool, float, Optional[str], str, Optional[Dict]]:
         # Check HTTP Status first
