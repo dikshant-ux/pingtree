@@ -25,13 +25,14 @@ class AuctionEngine:
         start_time = time.time()
         trace = []
         
-        def add_trace(stage: str, status: str, buyer_id: str = None, details: str = None):
+        def add_trace(stage: str, status: str, buyer_id: str = None, details: str = None, raw_response: Any = None):
             trace.append({
                 "timestamp": datetime.utcnow().isoformat(),
                 "stage": stage,
                 "status": status,
                 "buyer_id": buyer_id,
-                "details": details
+                "details": details,
+                "raw_response": raw_response
             })
 
         add_trace("Ingestion", "Received", details="Auction started")
@@ -105,19 +106,20 @@ class AuctionEngine:
             # 2. Parallel Ping for Ping & Post Candidates
             if ping_tasks := [self.ping_safe(b, lead_data) for b in ping_candidates]:
                 results = await asyncio.gather(*ping_tasks)
-                for buyer, success, price, redirect, reason, context in results:
+                for buyer, success, price, redirect, reason, context, raw_data in results:
                     if success:
                         score = RankingEngine.calculate_score(buyer, price)
-                        add_trace("Ping", "Accepted", str(buyer.id), f"Price: ${price}, Score: {score}")
+                        add_trace("Ping", "Accepted", str(buyer.id), f"Price: ${price}, Score: {score}", raw_response=raw_data)
                         accepted_bids.append({
                             "buyer": buyer,
                             "price": price,
                             "redirect": redirect,
                             "score": score,
-                            "context": context
+                            "context": context,
+                            "raw_data": raw_data
                         })
                     else:
-                        add_trace("Ping", "Rejected", str(buyer.id), reason)
+                        add_trace("Ping", "Rejected", str(buyer.id), reason, raw_response=raw_data)
 
             if not accepted_bids:
                 add_trace("Auction", f"Tier {tier_level} Failed", details="No accepted bids in this tier")
@@ -135,9 +137,9 @@ class AuctionEngine:
                 final_redirect = bid["redirect"]
                 
                 if (buyer.type == "ping_post" and buyer.post_url) or buyer.type in ["full_post", "redirect"]:
-                    success, post_price, post_redirect, post_reason, _ = await self.buyer_client.post_buyer(buyer, lead_data, context=context)
+                    success, post_price, post_redirect, post_reason, post_data = await self.buyer_client.post_buyer(buyer, lead_data, context=context)
                     if not success:
-                        add_trace("Post", "Failed", str(buyer.id), f"Post request failed: {post_reason}")
+                        add_trace("Post", "Failed", str(buyer.id), f"Post request failed: {post_reason}", raw_response=post_data)
                         continue # Failover to next in this tier
                     
                     # Update with dynamic price if supplied in post response
@@ -176,10 +178,10 @@ class AuctionEngine:
 
     async def ping_safe(self, buyer: Buyer, lead_data: Dict[str, Any]):
         try:
-            success, price, redirect, reason, context = await self.buyer_client.ping_buyer(buyer, lead_data)
-            return buyer, success, price, redirect, reason, context
+            success, price, redirect, reason, context, raw_data = await self.buyer_client.ping_buyer(buyer, lead_data)
+            return buyer, success, price, redirect, reason, context, raw_data
         except Exception as e:
-            return buyer, False, 0.0, None, str(e), {}
+            return buyer, False, 0.0, None, str(e), {}, None
 
     async def create_lead(self, data, status, trace, start_time, metadata: Dict[str, Any] = {}):
         latency = int((time.time() - start_time) * 1000)

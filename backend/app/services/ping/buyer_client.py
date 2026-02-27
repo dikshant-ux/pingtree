@@ -6,9 +6,9 @@ from app.models.buyer import Buyer, BuyerStatus
 logger = logging.getLogger(__name__)
 
 class BuyerClient:
-    async def ping_buyer(self, buyer: Buyer, lead_data: Dict[str, Any]) -> Tuple[bool, float, Optional[str], str, Dict[str, Any]]:
+    async def ping_buyer(self, buyer: Buyer, lead_data: Dict[str, Any]) -> Tuple[bool, float, Optional[str], str, Dict[str, Any], Optional[Dict]]:
         """
-        Returns (Success, Price, Redirect, Reason, Context)
+        Returns (Success, Price, Redirect, Reason, Context, RawData)
         Context is data extracted from response (e.g. Lead_ID) to be used in Post.
         """
         # Feature: Separate Ping Mapping
@@ -49,13 +49,13 @@ class BuyerClient:
                             context[rule.context_key] = val
                 print(f"DEBUG: Final Context: {context}")
                             
-                return success, price, redirect, reason, context
+                return success, price, redirect, reason, context, raw_data
                 
         except httpx.TimeoutException:
-            return False, 0.0, None, "Timeout", {}
+            return False, 0.0, None, "Timeout", {}, None
         except Exception as e:
             logger.error(f"Ping error for {buyer.name}: {e}")
-            return False, 0.0, None, f"Error: {str(e)}", {}
+            return False, 0.0, None, f"Error: {str(e)}", {}, None
 
     async def post_buyer(self, buyer: Buyer, lead_data: Dict[str, Any], context: Dict[str, Any] = {}) -> Tuple[bool, float, Optional[str], str, Optional[Dict]]:
         """
