@@ -40,6 +40,9 @@ class ValidatorService:
                 else:
                     response = await client.post(config.api_url, json=params)
 
+                logger.info(f"Validator Request URL: {response.url}")
+                logger.info(f"Validator Response ({response.status_code}): {response.text}")
+
                 if response.status_code != 200:
                     logger.error(f"Validator API returned status {response.status_code}: {response.text}")
                     # In case of API error, we might decide to fail-safe (accept) or fail-secure (reject)
