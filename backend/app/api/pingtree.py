@@ -30,7 +30,13 @@ async def get_lead_fields():
     # Fallback to defaults if no data exists yet (Bootstrap)
     return [
         "First_Name", "Last_Name", "Email", "Phone", "Address", "City", "State", "Zip",
-        "Dob", "Gender", "Ip_Address", "User_Agent"
+        "Dob", "Gender", "Ip_Address", "User_Agent", "click_id",
+        "loanAmount", "loanPurpose", "dob_mm", "dob_dd", "dob_yyyy", "SSN",
+        "payFrequency", "nextPayDate", "bankAccountType", "incomeMethod", "incomeType",
+        "isMilitary", "Employer", "incomeNetMonthly", "debtAssistance", "creditRating",
+        "ownVehicle", "bankName", "bankState", "routingNumber", "accountNumber",
+        "xxTrustedFormCertUrl", "xxTrustedFormToken", "xxTrustedFormPingUrl",
+        "source_url", "source_domain", "trusted_form_url", "trusted_form_token", "ip"
     ]
 
 from beanie import PydanticObjectId

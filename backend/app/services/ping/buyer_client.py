@@ -77,11 +77,11 @@ class BuyerClient:
         # Inject Mode
         payload["mode"] = "post"
 
-        # Inject TrustedForm if present
-        if lead_data.get("trusted_form_url"):
-            payload["trustedform_cert_url"] = lead_data["trusted_form_url"]
-        if lead_data.get("trusted_form_token"):
-            payload["trusted_form_token"] = lead_data["trusted_form_token"]
+        # # Inject TrustedForm if present
+        # if lead_data.get("trusted_form_url"):
+        #     payload["trustedform_cert_url"] = lead_data["trusted_form_url"]
+        # if lead_data.get("trusted_form_token"):
+        #     payload["trusted_form_token"] = lead_data["trusted_form_token"]
         
         url = buyer.post_url
         timeout = buyer.timeout_ms / 1000.0

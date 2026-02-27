@@ -19,7 +19,13 @@ export default function Step4_Mapping({ data, updateData }: Step4Props) {
     const mappings = data.field_mapping || [];
     const [availableFields, setAvailableFields] = useState<string[]>([
         "First_Name", "Last_Name", "Email", "Phone", "Address", "City", "State", "Zip",
-        "Dob", "Gender", "Ip_Address", "User_Agent"
+        "Dob", "Gender", "Ip_Address", "User_Agent", "click_id",
+        "loanAmount", "loanPurpose", "dob_mm", "dob_dd", "dob_yyyy", "SSN",
+        "payFrequency", "nextPayDate", "bankAccountType", "incomeMethod", "incomeType",
+        "isMilitary", "Employer", "incomeNetMonthly", "debtAssistance", "creditRating",
+        "ownVehicle", "bankName", "bankState", "routingNumber", "accountNumber",
+        "xxTrustedFormCertUrl", "xxTrustedFormToken", "xxTrustedFormPingUrl",
+        "source_url", "source_domain", "trusted_form_url", "trusted_form_token", "ip"
     ]);
 
     useEffect(() => {
@@ -56,9 +62,49 @@ export default function Step4_Mapping({ data, updateData }: Step4Props) {
         updateData({ field_mapping: newMappings });
     };
 
+    const autoMapFields = () => {
+        const standardFields = [
+            "First_Name", "Last_Name", "Email", "Phone", "Address", "City", "State", "Zip",
+            "Dob", "Gender", "Ip_Address", "User_Agent", "click_id",
+            "loanAmount", "loanPurpose", "dob_mm", "dob_dd", "dob_yyyy", "SSN",
+            "payFrequency", "nextPayDate", "bankAccountType", "incomeMethod", "incomeType",
+            "isMilitary", "Employer", "incomeNetMonthly", "debtAssistance", "creditRating",
+            "ownVehicle", "bankName", "bankState", "routingNumber", "accountNumber",
+            "xxTrustedFormCertUrl", "xxTrustedFormToken", "xxTrustedFormPingUrl",
+            "source_url", "source_domain", "trusted_form_url", "trusted_form_token", "ip"
+        ];
+
+        const existingFields = new Set(mappings.map(m => m.internal));
+        const newMappings = [...mappings];
+
+        standardFields.forEach(field => {
+            if (!existingFields.has(field)) {
+                // Determine buyer field name (often just lowercase version)
+                let buyerField = field.toLowerCase();
+
+                // Special overrides for common mappings if needed
+                if (field === "First_Name") buyerField = "first_name";
+                if (field === "Last_Name") buyerField = "last_name";
+
+                newMappings.push({
+                    internal: field,
+                    buyer: buyerField,
+                    required: true,
+                    send_in_ping: true,
+                    send_in_post: true
+                });
+            }
+        });
+
+        updateData({ field_mapping: newMappings });
+    };
+
     return (
         <div className="space-y-6">
-            <div className="flex justify-end">
+            <div className="flex justify-end gap-2">
+                <Button onClick={autoMapFields} variant="outline" size="sm" className="text-primary border-primary hover:bg-primary/5">
+                    <Plus className="w-4 h-4 mr-2" /> Auto-Map All Fields
+                </Button>
                 <Button onClick={() => addMapping()} size="sm">
                     <Plus className="w-4 h-4 mr-2" /> Add Field
                 </Button>

@@ -147,6 +147,12 @@
             if (this.config.formConfig) {
                 const clickIds = this.captureClickIds();
                 Object.assign(data, clickIds);
+
+                // Consolidate all captured click/rtk values into a single 'click_id' field
+                const clickIdValues = Object.values(clickIds).filter(v => v);
+                if (clickIdValues.length > 0) {
+                    data.click_id = clickIdValues[0];
+                }
             }
 
             // Inject Client-Side captured IP if available
