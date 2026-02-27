@@ -157,7 +157,7 @@
 
             // Inject Client-Side captured IP if available
             if (this.config.publicIP) {
-                data.captured_ip = this.config.publicIP;
+                data.Ip_Address = this.config.publicIP;
             }
 
             // Capture User-Agent

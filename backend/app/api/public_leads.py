@@ -44,7 +44,7 @@ async def public_ingest_lead(
         header_ip = request.headers.get("x-real-ip") or (request.client.host if request.client else None)
     
     # Prioritize client-side captured IP/UA if provided
-    ip_address = lead_data.pop("captured_ip", header_ip)
+    ip_address = lead_data.pop("Ip_Address", header_ip)
     user_agent = lead_data.get("User_Agent") or request.headers.get("user-agent")
     
     # Inject into lead data for processing/filtering/mapping

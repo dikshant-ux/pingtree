@@ -62,7 +62,7 @@ class BuyerClient:
         Returns (Success, Price, RedirectURL, Reason, Data)
         """
         if not buyer.post_url:
-            return True, buyer.payout, None # Maybe ping was enough?
+            return True, buyer.payout, None, "Success (No Post URL)", {} # Return 5-tuple
             
         # Feature: Separate Post Mapping
         mapping = buyer.post_mapping if buyer.post_mapping else buyer.field_mapping
@@ -136,8 +136,8 @@ class BuyerClient:
         success_val = self.get_nested(data, rules.success_field)
         # Convert both to string for comparison to handle int/str mismatch
         if str(success_val).lower() != str(rules.success_value).lower():
-            reason = self.get_nested(data, rules.reason_field) if rules.reason_field else "Rejected"
-            return False, 0.0, None, str(reason), data
+            reason = self.get_nested(data, rules.reason_field) if rules.reason_field else None
+            return False, 0.0, None, str(reason or "Rejected"), data
             
         price = 0.0
         if rules.price_field:
