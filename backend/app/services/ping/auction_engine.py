@@ -135,9 +135,9 @@ class AuctionEngine:
                 final_redirect = bid["redirect"]
                 
                 if (buyer.type == "ping_post" and buyer.post_url) or buyer.type in ["full_post", "redirect"]:
-                    success, post_price, post_redirect = await self.buyer_client.post_buyer(buyer, lead_data, context=context)
+                    success, post_price, post_redirect, post_reason, _ = await self.buyer_client.post_buyer(buyer, lead_data, context=context)
                     if not success:
-                        add_trace("Post", "Failed", str(buyer.id), "Post request failed")
+                        add_trace("Post", "Failed", str(buyer.id), f"Post request failed: {post_reason}")
                         continue # Failover to next in this tier
                     
                     # Update with dynamic price if supplied in post response

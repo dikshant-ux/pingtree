@@ -38,7 +38,7 @@ async def get_lead_fields():
         "isMilitary", "Employer", "incomeNetMonthly", "debtAssistance", "creditRating",
         "ownVehicle", "bankName", "bankState", "routingNumber", "accountNumber",
         "xxTrustedFormCertUrl", "xxTrustedFormToken", "xxTrustedFormPingUrl",
-        "source_url", "source_domain", "trusted_form_url", "trusted_form_token", "ip"
+        "source_url", "source_domain", "trusted_form_url", "trusted_form_token", "Ip_Address"
     ]
 
 from beanie import PydanticObjectId

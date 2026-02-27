@@ -57,9 +57,9 @@ class BuyerClient:
             logger.error(f"Ping error for {buyer.name}: {e}")
             return False, 0.0, None, f"Error: {str(e)}", {}
 
-    async def post_buyer(self, buyer: Buyer, lead_data: Dict[str, Any], context: Dict[str, Any] = {}) -> Tuple[bool, float, Optional[str]]:
+    async def post_buyer(self, buyer: Buyer, lead_data: Dict[str, Any], context: Dict[str, Any] = {}) -> Tuple[bool, float, Optional[str], str, Optional[Dict]]:
         """
-        Returns (Success, Price, RedirectURL)
+        Returns (Success, Price, RedirectURL, Reason, Data)
         """
         if not buyer.post_url:
             return True, buyer.payout, None # Maybe ping was enough?
@@ -90,11 +90,11 @@ class BuyerClient:
         try:
             async with httpx.AsyncClient() as client:
                 response = await client.post(url, json=payload, headers=headers, timeout=timeout)
-                success, price, redirect, _, _ = self.parse_response(buyer, response)
-                return success, price, redirect
+                success, price, redirect, reason, data = self.parse_response(buyer, response)
+                return success, price, redirect, reason, data
         except Exception as e:
             logger.error(f"Post failed for {buyer.name}: {e}")
-            return False, 0.0, None
+            return False, 0.0, None, f"Error: {str(e)}", {}
 
     def transform_payload(self, lead_data: Dict[str, Any], mapping: list) -> Dict[str, Any]:
         if not mapping:

@@ -48,7 +48,7 @@ async def public_ingest_lead(
     user_agent = lead_data.get("User_Agent") or request.headers.get("user-agent")
     
     # Inject into lead data for processing/filtering/mapping
-    lead_data["ip"] = ip_address
+    lead_data["Ip_Address"] = ip_address
     lead_data["User_Agent"] = user_agent
     
     metadata = {
