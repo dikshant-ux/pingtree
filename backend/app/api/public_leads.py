@@ -34,11 +34,16 @@ async def public_ingest_lead(
 
     # Metadata extraction
     referer = request.headers.get("referer")
+    ip_address = request.client.host if request.client else None
+    
+    # Inject IP into lead data for processing/filtering
+    lead_data["ip"] = ip_address
+    
     metadata = {
         "form_id": lead_data.pop("form_id", None),
         "source_url": referer,
         "source_domain": referer.split('/')[2] if referer and '//' in referer else None,
-        "ip_address": request.client.host if request.client else None,
+        "ip_address": ip_address,
         "trusted_form_url": lead_data.get("trusted_form_url"),
         "trusted_form_token": lead_data.get("trusted_form_token")
     }

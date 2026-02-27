@@ -29,6 +29,7 @@ interface LeadForm {
     allowed_domains: string[];
     is_active: boolean;
     reject_redirect_url?: string;
+    click_id_configs: { key: string; method: string; param_name?: string; script_url?: string; }[];
 }
 
 export default function IngestionPage() {
@@ -41,7 +42,13 @@ export default function IngestionPage() {
     const [forms, setForms] = useState<LeadForm[]>([]);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-    const [newForm, setNewForm] = useState({ name: '', title: '', primary_color: '#28a745', reject_redirect_url: '' });
+    const [newForm, setNewForm] = useState({
+        name: '',
+        title: '',
+        primary_color: '#28a745',
+        reject_redirect_url: '',
+        click_id_configs: [] as { key: string; method: string; param_name?: string; script_url?: string; }[]
+    });
     const [editingForm, setEditingForm] = useState<LeadForm | null>(null);
     const [selectedForm, setSelectedForm] = useState<LeadForm | null>(null);
     const [baseUrl, setBaseUrl] = useState<string>('');
@@ -94,7 +101,13 @@ export default function IngestionPage() {
             setForms([...forms, res.data]);
             setSelectedForm(res.data);
             setIsCreateModalOpen(false);
-            setNewForm({ name: '', title: '', primary_color: '#28a745', reject_redirect_url: '' });
+            setNewForm({
+                name: '',
+                title: '',
+                primary_color: '#28a745',
+                reject_redirect_url: '',
+                click_id_configs: []
+            });
             toast.success("Form Created Successfully");
         } catch (err) {
             toast.error("Failed to create form");
@@ -159,7 +172,11 @@ export default function IngestionPage() {
     // Embed Snippets
     const getEmbedCode = (formId?: string) => `<script src="${baseUrl}/static/pingtree.js"></script>
 <script>
-    PingTree.init("${apiKey || 'YOUR_API_KEY'}");
+    (async () => {
+        await PingTree.init("${apiKey || 'YOUR_API_KEY'}", { 
+            formId: "${formId || 'optional_form_id'}" 
+        });
+    })();
 </script>`;
 
     const getRenderCode = (form: LeadForm) => `PingTree.render("pt-lead-form", {
@@ -174,15 +191,17 @@ export default function IngestionPage() {
             const container = document.getElementById('preview-container');
             if (container) container.innerHTML = '';
 
-            (window as any).PingTree.init(apiKey);
-            setTimeout(() => {
-                (window as any).PingTree.render('preview-container', {
-                    formId: selectedForm._id,
-                    title: selectedForm.title,
-                    primaryColor: selectedForm.primary_color,
-                    onSuccess: (res: any) => toast.success("Preview Submission Successful!")
-                });
-            }, 100);
+            (async () => {
+                await (window as any).PingTree.init(apiKey, { formId: selectedForm._id });
+                setTimeout(() => {
+                    (window as any).PingTree.render('preview-container', {
+                        formId: selectedForm._id,
+                        title: selectedForm.title,
+                        primaryColor: selectedForm.primary_color,
+                        onSuccess: (res: any) => toast.success("Preview Submission Successful!")
+                    });
+                }, 100);
+            })();
         }
     }, [selectedForm, isScriptLoaded, apiKey]);
 
@@ -420,6 +439,91 @@ export default function IngestionPage() {
                             />
                             <p className="text-[10px] text-muted-foreground italic">Users will be redirected here if no buyers buy the lead.</p>
                         </div>
+
+                        <div className="space-y-3 border-t pt-4">
+                            <label className="text-sm font-semibold flex items-center gap-2">
+                                <MousePointer2 className="h-4 w-4" /> Click ID Tracking
+                            </label>
+                            <div className="space-y-2">
+                                {newForm.click_id_configs.map((config, index) => (
+                                    <div key={index} className="flex gap-2 items-end bg-accent/30 p-2 rounded-md border border-border">
+                                        <div className="flex-1 space-y-1">
+                                            <label className="text-[10px] uppercase font-bold text-muted-foreground">Field Key</label>
+                                            <Input
+                                                value={config.key}
+                                                onChange={(e) => {
+                                                    const updated = [...newForm.click_id_configs];
+                                                    updated[index].key = e.target.value;
+                                                    setNewForm({ ...newForm, click_id_configs: updated });
+                                                }}
+                                                placeholder="e.g. click_id"
+                                                className="h-8 text-xs"
+                                            />
+                                        </div>
+                                        <div className="flex-1 space-y-1">
+                                            <label className="text-[10px] uppercase font-bold text-muted-foreground">Method</label>
+                                            <select
+                                                value={config.method}
+                                                className="w-full h-8 text-xs bg-background border border-input rounded-md px-2"
+                                                onChange={(e) => {
+                                                    const updated = [...newForm.click_id_configs];
+                                                    updated[index].method = e.target.value;
+                                                    if (e.target.value === 'url') updated[index].param_name = config.key;
+                                                    if (e.target.value === 'rtk') updated[index].script_url = 'https://tr.cloudsoutions.com/uniclick.js?attribution=lastpaid&cookiedomain=cashinsecond.com&cookieduration=90&defaultcampaignid=6718e7b9f169cec28f38fbef&regviewonce=false';
+                                                    setNewForm({ ...newForm, click_id_configs: updated });
+                                                }}
+                                            >
+                                                <option value="url">URL Parameter</option>
+                                                <option value="rtk">RTK Script</option>
+                                            </select>
+                                        </div>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-8 w-8 text-destructive"
+                                            onClick={() => {
+                                                const updated = newForm.click_id_configs.filter((_, i) => i !== index);
+                                                setNewForm({ ...newForm, click_id_configs: updated });
+                                            }}
+                                        >
+                                            <Trash2 className="h-3 w-3" />
+                                        </Button>
+                                    </div>
+                                ))}
+                                <div className="flex gap-2">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="text-[10px] h-7"
+                                        onClick={() => {
+                                            setNewForm({
+                                                ...newForm,
+                                                click_id_configs: [...newForm.click_id_configs, { key: 'click_id', method: 'url', param_name: 'click_id' }]
+                                            });
+                                        }}
+                                    >
+                                        <Plus className="h-3 w-3 mr-1" /> Add click_id (URL)
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="text-[10px] h-7"
+                                        onClick={() => {
+                                            setNewForm({
+                                                ...newForm,
+                                                click_id_configs: [...newForm.click_id_configs, {
+                                                    key: 'rtkclickid',
+                                                    method: 'rtk',
+                                                    script_url: 'https://tr.cloudsoutions.com/uniclick.js?attribution=lastpaid&cookiedomain=cashinsecond.com&cookieduration=90&defaultcampaignid=6718e7b9f169cec28f38fbef&regviewonce=false'
+                                                }]
+                                            });
+                                        }}
+                                    >
+                                        <Plus className="h-3 w-3 mr-1" /> Add rtkclickid (Script)
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setIsCreateModalOpen(false)}>Cancel</Button>
@@ -478,6 +582,109 @@ export default function IngestionPage() {
                                     onChange={(e) => setEditingForm({ ...editingForm, reject_redirect_url: e.target.value })}
                                 />
                                 <p className="text-[10px] text-muted-foreground italic">Users will be redirected here if no buyers buy the lead.</p>
+                            </div>
+
+                            <div className="space-y-3 border-t pt-4">
+                                <label className="text-sm font-semibold flex items-center gap-2">
+                                    <MousePointer2 className="h-4 w-4" /> Click ID Tracking
+                                </label>
+                                <div className="space-y-2">
+                                    {editingForm.click_id_configs?.map((config, index) => (
+                                        <div key={index} className="flex gap-2 items-end bg-accent/30 p-2 rounded-md border border-border">
+                                            <div className="flex-1 space-y-1">
+                                                <label className="text-[10px] uppercase font-bold text-muted-foreground">Field Key</label>
+                                                <Input
+                                                    value={config.key}
+                                                    onChange={(e) => {
+                                                        const updated = [...editingForm.click_id_configs];
+                                                        updated[index].key = e.target.value;
+                                                        setEditingForm({ ...editingForm, click_id_configs: updated });
+                                                    }}
+                                                    placeholder="e.g. click_id"
+                                                    className="h-8 text-xs"
+                                                />
+                                            </div>
+                                            <div className="flex-1 space-y-1">
+                                                <label className="text-[10px] uppercase font-bold text-muted-foreground">Method</label>
+                                                <select
+                                                    value={config.method}
+                                                    className="w-full h-8 text-xs bg-background border border-input rounded-md px-2"
+                                                    onChange={(e) => {
+                                                        const updated = [...editingForm.click_id_configs];
+                                                        updated[index].method = e.target.value;
+                                                        if (e.target.value === 'url') updated[index].param_name = config.key;
+                                                        if (e.target.value === 'rtk') updated[index].script_url = 'https://tr.cloudsoutions.com/uniclick.js?attribution=lastpaid&cookiedomain=cashinsecond.com&cookieduration=90&defaultcampaignid=6718e7b9f169cec28f38fbef&regviewonce=false';
+                                                        setEditingForm({ ...editingForm, click_id_configs: updated });
+                                                    }}
+                                                >
+                                                    <option value="url">URL Parameter</option>
+                                                    <option value="rtk">RTK Script</option>
+                                                    <option value="custom">Custom JS</option>
+                                                </select>
+                                            </div>
+                                            {config.method === 'custom' && (
+                                                <div className="flex-1 space-y-1">
+                                                    <label className="text-[10px] uppercase font-bold text-muted-foreground">JS Code</label>
+                                                    <Input
+                                                        value={config.param_name}
+                                                        onChange={(e) => {
+                                                            const updated = [...editingForm.click_id_configs];
+                                                            updated[index].param_name = e.target.value;
+                                                            setEditingForm({ ...editingForm, click_id_configs: updated });
+                                                        }}
+                                                        placeholder="window.myId"
+                                                        className="h-8 text-xs"
+                                                    />
+                                                </div>
+                                            )}
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-8 w-8 text-destructive"
+                                                onClick={() => {
+                                                    const updated = editingForm.click_id_configs.filter((_, i) => i !== index);
+                                                    setEditingForm({ ...editingForm, click_id_configs: updated });
+                                                }}
+                                            >
+                                                <Trash2 className="h-3 w-3" />
+                                            </Button>
+                                        </div>
+                                    ))}
+                                    <div className="flex gap-2">
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="text-[10px] h-7"
+                                            onClick={() => {
+                                                const current = editingForm.click_id_configs || [];
+                                                setEditingForm({
+                                                    ...editingForm,
+                                                    click_id_configs: [...current, { key: 'click_id', method: 'url', param_name: 'click_id' }]
+                                                });
+                                            }}
+                                        >
+                                            <Plus className="h-3 w-3 mr-1" /> Add click_id (URL)
+                                        </Button>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="text-[10px] h-7"
+                                            onClick={() => {
+                                                const current = editingForm.click_id_configs || [];
+                                                setEditingForm({
+                                                    ...editingForm,
+                                                    click_id_configs: [...current, {
+                                                        key: 'rtkclickid',
+                                                        method: 'rtk',
+                                                        script_url: 'https://tr.cloudsoutions.com/uniclick.js?attribution=lastpaid&cookiedomain=cashinsecond.com&cookieduration=90&defaultcampaignid=6718e7b9f169cec28f38fbef&regviewonce=false'
+                                                    }]
+                                                });
+                                            }}
+                                        >
+                                            <Plus className="h-3 w-3 mr-1" /> Add rtkclickid (Script)
+                                        </Button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     )}

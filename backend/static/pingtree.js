@@ -18,21 +18,91 @@
     var PingTree = {
         config: {
             apiKey: null,
+            formId: null,
+            formConfig: null,
             endpoint: 'https://js.trustedagentforyou.com/api/v1/public/leads/ingest'
         },
 
-        init: function (apiKey, options) {
+        init: async function (apiKey, options = {}) {
             this.config.apiKey = apiKey;
-            if (options && options.endpoint) {
+            if (options.endpoint) {
                 this.config.endpoint = options.endpoint;
             }
+            if (options.formId) {
+                this.config.formId = options.formId;
+                await this.fetchFormConfig();
+                await this.loadExternalScripts();
+            }
             console.log('PingTree Ingestion Script Initialized');
+        },
+
+        fetchFormConfig: async function () {
+            if (!this.config.formId) return;
+            try {
+                // Derived from endpoint
+                const baseApi = this.config.endpoint.split('/public/')[0];
+                const response = await fetch(`${baseApi}/public/forms/${this.config.formId}`);
+                if (response.ok) {
+                    this.config.formConfig = await response.json();
+                }
+            } catch (e) {
+                console.error("PingTree: Failed to fetch form config", e);
+            }
+        },
+
+        loadExternalScripts: async function () {
+            if (!this.config.formConfig || !this.config.formConfig.click_id_configs) return;
+
+            for (const config of this.config.formConfig.click_id_configs) {
+                if (config.method === 'rtk' && config.script_url) {
+                    if (!document.querySelector(`script[src*="${config.script_url}"]`)) {
+                        const script = document.createElement('script');
+                        script.src = config.script_url;
+                        script.async = true;
+                        document.head.appendChild(script);
+                    }
+                }
+            }
+        },
+
+        captureClickIds: function () {
+            const captured = {};
+            if (!this.config.formConfig || !this.config.formConfig.click_id_configs) return captured;
+
+            for (const config of this.config.formConfig.click_id_configs) {
+                if (config.method === 'url') {
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const val = urlParams.get(config.param_name || config.key);
+                    if (val) captured[config.key] = val;
+                } else if (config.method === 'rtk') {
+                    // Try to find in cookie or window
+                    const getCookie = (name) => {
+                        let value = "; " + document.cookie;
+                        let parts = value.split("; " + name + "=");
+                        if (parts.length === 2) return parts.pop().split(";").shift();
+                    };
+                    const val = getCookie('rtkClickID') || window.rtkClickID;
+                    if (val) captured[config.key] = val;
+                } else if (config.method === 'custom' && config.param_name) {
+                    try {
+                        const val = eval(config.param_name);
+                        if (val) captured[config.key] = val;
+                    } catch (e) { }
+                }
+            }
+            return captured;
         },
 
         submit: async function (data) {
             if (!this.config.apiKey) {
                 console.error('PingTree Error: API Key not set. Call PingTree.init("YOUR_API_KEY")');
                 return Promise.reject(new Error("API Key missing"));
+            }
+
+            // Sync with Click ID configs
+            if (this.config.formConfig) {
+                const clickIds = this.captureClickIds();
+                Object.assign(data, clickIds);
             }
 
             try {
@@ -44,7 +114,6 @@
                     },
                     body: JSON.stringify(data)
                 });
-
                 if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 const result = await response.json();
                 console.log('PingTree Lead Submitted:', result);
