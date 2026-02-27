@@ -6,6 +6,9 @@ import { WizardBuyerConfig, WizardFilterRule } from "@/types/wizard";
 import { Button } from "@/components/ui/button";
 import { Plus, Trash2 } from "lucide-react";
 
+import { useEffect, useState } from "react";
+import api from "@/lib/api";
+
 interface Step6Props {
     data: WizardBuyerConfig;
     updateData: (updates: Partial<WizardBuyerConfig>) => void;
@@ -14,6 +17,33 @@ interface Step6Props {
 export default function Step6_FiltersCaps({ data, updateData }: Step6Props) {
     const filters = data.filters || [];
     const caps = data.caps || { daily: 0, hourly: 0 };
+
+    const [availableFields, setAvailableFields] = useState<string[]>([
+        "First_Name", "Last_Name", "Email", "Phone", "Address", "City", "State", "Zip",
+        "Dob", "Gender", "Ip_Address", "User_Agent", "click_id",
+        "gclid", "fbp", "fbc", "utm_source", "utm_medium", "utm_campaign",
+        "utm_term", "utm_content", "eventid", "unique_id", "subsource", "source",
+        "loanAmount", "loanPurpose", "dob_mm", "dob_dd", "dob_yyyy", "SSN",
+        "payFrequency", "nextPayDate", "bankAccountType", "incomeMethod", "incomeType",
+        "isMilitary", "Employer", "incomeNetMonthly", "debtAssistance", "creditRating",
+        "ownVehicle", "bankName", "bankState", "routingNumber", "accountNumber",
+        "xxTrustedFormCertUrl", "xxTrustedFormToken", "xxTrustedFormPingUrl",
+        "source_url", "source_domain", "trusted_form_url", "trusted_form_token"
+    ]);
+
+    useEffect(() => {
+        const fetchFields = async () => {
+            try {
+                const res = await api.get("/leads/fields");
+                if (res.data && Array.isArray(res.data) && res.data.length > 0) {
+                    setAvailableFields(res.data);
+                }
+            } catch (error) {
+                console.error("Failed to fetch lead fields", error);
+            }
+        };
+        fetchFields();
+    }, []);
 
     // Filters Logic
     const addFilter = () => {
@@ -75,7 +105,13 @@ export default function Step6_FiltersCaps({ data, updateData }: Step6Props) {
                                     value={filter.field}
                                     onChange={(e) => updateFilter(index, 'field', e.target.value)}
                                     placeholder="Field (e.g. state)"
+                                    list={`fields-list-${index}`}
                                 />
+                                <datalist id={`fields-list-${index}`}>
+                                    {availableFields.map(f => (
+                                        <option key={f} value={f} />
+                                    ))}
+                                </datalist>
                             </div>
                             <div className="col-span-2">
                                 <select

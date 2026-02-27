@@ -33,20 +33,40 @@ interface ValidationConfig {
     success_criteria_value: string;
 }
 
-const LEAD_FIELDS = [
-    "first_name", "last_name", "email", "phone", "zip",
-    "ip_address", "state", "city", "street", "ssn",
-    "employer_name", "income_source", "pay_frequency", "monthly_income"
+const DEFAULT_LEAD_FIELDS = [
+    "First_Name", "Last_Name", "Email", "Phone", "Address", "City", "State", "Zip",
+    "Dob", "Gender", "User_Agent", "click_id",
+    "gclid", "fbp", "fbc", "utm_source", "utm_medium", "utm_campaign",
+    "utm_term", "utm_content", "eventid", "unique_id", "subsource", "source",
+    "loanAmount", "loanPurpose", "dob_mm", "dob_dd", "dob_yyyy", "SSN",
+    "payFrequency", "nextPayDate", "bankAccountType", "incomeMethod", "incomeType",
+    "isMilitary", "Employer", "incomeNetMonthly", "debtAssistance", "creditRating",
+    "ownVehicle", "bankName", "bankState", "routingNumber", "accountNumber",
+    "xxTrustedFormCertUrl", "xxTrustedFormToken", "xxTrustedFormPingUrl",
+    "source_url", "source_domain", "trusted_form_url", "trusted_form_token"
 ];
 
 export default function LeadValidationPage() {
     const [configs, setConfigs] = useState<ValidationConfig[]>([]);
     const [selectedConfig, setSelectedConfig] = useState<ValidationConfig | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [leadFields, setLeadFields] = useState<string[]>(DEFAULT_LEAD_FIELDS);
 
     useEffect(() => {
         fetchConfigs();
+        fetchFields();
     }, []);
+
+    const fetchFields = async () => {
+        try {
+            const res = await api.get("/leads/fields");
+            if (res.data && Array.isArray(res.data) && res.data.length > 0) {
+                setLeadFields(res.data);
+            }
+        } catch (error) {
+            console.error("Failed to fetch lead fields", error);
+        }
+    };
 
     const fetchConfigs = async () => {
         try {
@@ -122,7 +142,7 @@ export default function LeadValidationPage() {
 
     const addMappingRow = () => {
         if (!selectedConfig) return;
-        const availableField = LEAD_FIELDS.find(f => !selectedConfig.param_mappings[f]);
+        const availableField = leadFields.find(f => !selectedConfig.param_mappings[f]);
         if (availableField) {
             updateMapping(availableField, availableField);
         }
@@ -259,21 +279,25 @@ export default function LeadValidationPage() {
                                             {Object.entries(selectedConfig.param_mappings).map(([leadField, apiParam], idx) => (
                                                 <div key={idx} className="flex gap-4 items-center animate-in fade-in slide-in-from-left-2 transition-all">
                                                     <div className="flex-1">
-                                                        <Select value={leadField} onValueChange={(val) => {
-                                                            const m = { ...selectedConfig.param_mappings };
-                                                            delete m[leadField];
-                                                            m[val] = apiParam;
-                                                            setSelectedConfig({ ...selectedConfig, param_mappings: m });
-                                                        }}>
-                                                            <SelectTrigger>
-                                                                <SelectValue />
-                                                            </SelectTrigger>
-                                                            <SelectContent>
-                                                                {LEAD_FIELDS.map(f => (
-                                                                    <SelectItem key={f} value={f}>{f}</SelectItem>
-                                                                ))}
-                                                            </SelectContent>
-                                                        </Select>
+                                                        <Input 
+                                                            value={leadField} 
+                                                            onChange={(e) => {
+                                                                const val = e.target.value;
+                                                                const m = { ...selectedConfig.param_mappings };
+                                                                // Important: we need to preserve the value but rename the key
+                                                                const targetValue = m[leadField];
+                                                                delete m[leadField];
+                                                                m[val] = targetValue;
+                                                                setSelectedConfig({ ...selectedConfig, param_mappings: m });
+                                                            }}
+                                                            placeholder="Lead Field"
+                                                            list={`lead-fields-list-${idx}`}
+                                                        />
+                                                        <datalist id={`lead-fields-list-${idx}`}>
+                                                            {leadFields.map(f => (
+                                                                <option key={f} value={f} />
+                                                            ))}
+                                                        </datalist>
                                                     </div>
                                                     <div className="text-muted-foreground">→</div>
                                                     <div className="flex-[1.5]">
