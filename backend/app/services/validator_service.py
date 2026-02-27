@@ -34,11 +34,15 @@ class ValidatorService:
             params["api_key"] = config.api_key
 
         try:
+            headers = {
+                "Origin": "https://js.trustedagentforyou.com/",
+                "Referer": "https://js.trustedagentforyou.com/"
+            }
             async with httpx.AsyncClient(timeout=5.0) as client:
                 if config.method.upper() == "GET":
-                    response = await client.get(config.api_url, params=params)
+                    response = await client.get(config.api_url, params=params, headers=headers)
                 else:
-                    response = await client.post(config.api_url, json=params)
+                    response = await client.post(config.api_url, json=params, headers=headers)
 
                 logger.info(f"Validator Request URL: {response.url}")
                 logger.info(f"Validator Response ({response.status_code}): {response.text}")
