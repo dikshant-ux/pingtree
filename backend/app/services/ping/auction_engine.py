@@ -149,6 +149,8 @@ class AuctionEngine:
                         
                     if post_redirect:
                         final_redirect = post_redirect
+                    
+                    add_trace("Post", "Success", str(buyer.id), "Lead sold", raw_response=post_data)
                 
                 # SOLD
                 lead = await self.create_lead(lead_data, LeadStatus.SOLD, trace, start_time, metadata)
