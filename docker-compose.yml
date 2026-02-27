@@ -2,12 +2,8 @@ services:
   backend:
     build: ./backend
     restart: always
-    environment:
-      - MONGODB_URL=mongodb://mongodb:27017
-      - DATABASE_NAME=pingtree_db
-      - REDIS_URL=redis://redis:6379
-      - BASE_URL=${BASE_URL:-https://js.trustedagentforyou.com}
-      - FRONTEND_URL=${FRONTEND_URL:-https://js.trustedagentforyou.com}
+    env_file:
+      - ./backend/.env
     depends_on:
       - mongodb
       - redis
