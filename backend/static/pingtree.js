@@ -508,7 +508,7 @@
                                     <select class="pt-select" name="bankAccountType" required>
                                         <option value="" disabled selected>Please select</option>
                                         <option value="CHECKING">Checking</option>
-                                        <option value="SAVINGS">Savings</option>
+                                        <option value="SAVING">Saving</option>
                                     </select>
                                     <div class="pt-error-hint">Select account type</div>
                                 </div>
