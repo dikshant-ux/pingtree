@@ -83,28 +83,56 @@
 
         captureClickIds: function () {
             const captured = {};
-            if (!this.config.formConfig || !this.config.formConfig.click_id_configs) return captured;
+            if (!this.config.formConfig || !this.config.formConfig.click_id_configs) {
+                console.log('PingTree: No Click ID configs found');
+                return captured;
+            }
+
+            console.log('PingTree: Capturing Click IDs...', this.config.formConfig.click_id_configs);
 
             for (const config of this.config.formConfig.click_id_configs) {
+                let val = null;
                 if (config.method === 'url') {
                     const urlParams = new URLSearchParams(window.location.search);
-                    const val = urlParams.get(config.param_name || config.key);
-                    if (val) captured[config.key] = val;
+                    val = urlParams.get(config.param_name || config.key);
+                    console.log(`PingTree: URL Param capture [${config.key}]:`, val);
                 } else if (config.method === 'rtk') {
-                    // Try to find in cookie or window
                     const getCookie = (name) => {
                         let value = "; " + document.cookie;
                         let parts = value.split("; " + name + "=");
                         if (parts.length === 2) return parts.pop().split(";").shift();
                     };
-                    const val = getCookie('rtkClickID') || window.rtkClickID;
-                    if (val) captured[config.key] = val;
+
+                    // Priority 1: Window variables (common in RedTrack)
+                    val = window.rtkClickID || window.rtkClickId || window.rtk_clickid;
+
+                    // Priority 2: Cookies
+                    if (!val) val = getCookie('rtkClickID') || getCookie('rtkClickId') || getCookie('rtk_clickid');
+
+                    // Priority 3: Session Storage
+                    if (!val) {
+                        val = sessionStorage.getItem('rtkclickid') ||
+                            sessionStorage.getItem('rtkClickID') ||
+                            sessionStorage.getItem('rtkClickId');
+                    }
+
+                    // Priority 4: URL Parameter (fallback if script didn't move it yet)
+                    if (!val) {
+                        const urlParams = new URLSearchParams(window.location.search);
+                        val = urlParams.get('rtkClickID') || urlParams.get('rtkClickId') || urlParams.get('clickid');
+                    }
+
+                    console.log(`PingTree: RTK capture [${config.key}]:`, val);
                 } else if (config.method === 'custom' && config.param_name) {
                     try {
-                        const val = eval(config.param_name);
-                        if (val) captured[config.key] = val;
-                    } catch (e) { }
+                        val = eval(config.param_name);
+                        console.log(`PingTree: Custom JS capture [${config.key}]:`, val);
+                    } catch (e) {
+                        console.warn(`PingTree: Custom JS capture failed for [${config.key}]:`, e);
+                    }
                 }
+
+                if (val) captured[config.key] = val;
             }
             return captured;
         },
@@ -125,6 +153,8 @@
             if (this.config.publicIP) {
                 data.captured_ip = this.config.publicIP;
             }
+
+            console.log('PingTree: Final data for submission:', data);
 
             try {
                 const response = await fetch(this.config.endpoint, {
@@ -193,7 +223,13 @@
             });
         },
 
-        render: function (containerId, options = {}) {
+        render: async function (containerId, options = {}) {
+            if (options.formId && !this.config.formConfig) {
+                this.config.formId = options.formId;
+                await this.fetchFormConfig();
+                await this.loadExternalScripts();
+            }
+
             const container = document.getElementById(containerId);
             if (!container) return;
 
