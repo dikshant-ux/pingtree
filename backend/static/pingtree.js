@@ -34,7 +34,6 @@
                     try {
                         const scriptOrigin = new URL(scriptEl.src).origin;
                         this.config.endpoint = `${scriptOrigin}/api/v1/public/leads/ingest`;
-                        console.log('PingTree: Auto-detected local endpoint:', this.config.endpoint);
                     } catch (e) {
                         console.warn('PingTree: Could not auto-detect endpoint from script src');
                     }
@@ -43,7 +42,6 @@
                 this.config.endpoint = options.endpoint;
             }
 
-            console.log('PingTree: Initializing with endpoint:', this.config.endpoint);
 
             // Capture Public IP early
             this.getPublicIP();
@@ -53,7 +51,6 @@
                 await this.fetchFormConfig();
                 await this.loadExternalScripts();
             }
-            console.log('PingTree Ingestion Script Initialized');
         },
 
         getPublicIP: async function () {
@@ -61,7 +58,6 @@
                 const res = await fetch('https://api.ipify.org?format=json');
                 const data = await res.json();
                 this.config.publicIP = data.ip;
-                console.log('PingTree: Captured Client IP:', data.ip);
             } catch (e) {
                 console.warn('PingTree: Could not capture client IP via JS', e);
             }
@@ -73,12 +69,10 @@
                 // Derived from endpoint
                 const baseApi = this.config.endpoint.split('/public/')[0];
                 const url = `${baseApi}/public/forms/${this.config.formId}`;
-                console.log('PingTree: Fetching form config from:', url);
 
                 const response = await fetch(url);
                 if (response.ok) {
                     this.config.formConfig = await response.json();
-                    console.log('PingTree: Form config loaded successfully');
                 } else {
                     console.error(`PingTree: Failed to fetch form config. Status: ${response.status}`, url);
                 }
@@ -170,19 +164,12 @@
 
         captureClickIds: function () {
             const captured = {};
-            if (!this.config.formConfig || !this.config.formConfig.click_id_configs) {
-                console.log('PingTree: No Click ID configs found');
-                return captured;
-            }
-
-            console.log('PingTree: Capturing Click IDs...', this.config.formConfig.click_id_configs);
 
             for (const config of this.config.formConfig.click_id_configs) {
                 let val = null;
                 if (config.method === 'url') {
                     const urlParams = new URLSearchParams(window.location.search);
                     val = urlParams.get(config.param_name || config.key);
-                    console.log(`PingTree: URL Param capture [${config.key}]:`, val);
                 } else if (config.method === 'rtk') {
                     const getCookie = (name) => {
                         let value = "; " + document.cookie;
@@ -209,11 +196,9 @@
                         val = urlParams.get('rtkClickID') || urlParams.get('rtkClickId') || urlParams.get('clickid');
                     }
 
-                    console.log(`PingTree: RTK capture [${config.key}]:`, val);
                 } else if (config.method === 'custom' && config.param_name) {
                     try {
                         val = eval(config.param_name);
-                        console.log(`PingTree: Custom JS capture [${config.key}]:`, val);
                     } catch (e) {
                         console.warn(`PingTree: Custom JS capture failed for [${config.key}]:`, e);
                     }
@@ -260,7 +245,6 @@
                 data[param] = urlParams.get(param) || "";
             });
 
-            console.log('PingTree: Final data for submission:', data);
 
             try {
                 const response = await fetch(this.config.endpoint, {
@@ -273,7 +257,6 @@
                 });
                 if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 const result = await response.json();
-                console.log('PingTree Lead Submitted:', result);
                 return result;
             } catch (error) {
                 console.error('PingTree Submission Failed:', error);
@@ -1091,7 +1074,6 @@
 
                     if (zip.length === 5) {
                         group.dataset.zipLoading = 'true';
-                        console.log(`PingTree: Validating zip code ${zip}...`);
                         const details = await this.fetchZipDetails(zip);
 
                         delete group.dataset.zipLoading;
@@ -1100,7 +1082,6 @@
                         if (zipField.value.replace(/\D/g, '') !== zip) return;
 
                         if (details) {
-                            console.log(`PingTree: Zip ${zip} is valid for ${details.city}, ${details.state}`);
                             // Valid Zip
                             const successDiv = document.createElement('div');
                             successDiv.className = 'omForm-group__field is-success pt-zip-success';
