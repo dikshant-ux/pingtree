@@ -19,11 +19,6 @@ services:
     depends_on:
       - backend
 
-  mongodb:
-    image: mongo:latest
-    restart: always
-    volumes:
-      - ./data/mongodb:/data/db
 
   redis:
     image: redis:alpine
