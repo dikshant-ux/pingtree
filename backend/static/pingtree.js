@@ -1,18 +1,18 @@
 (function () {
     const STATES = [
-        { val: "AL", label: "Alabama" }, { val: "AK", label: "Alaska" }, { val: "AZ", label: "Arizona" }, { val: "AR", label: "Arkansas" },
-        { val: "CA", label: "California" }, { val: "CO", label: "Colorado" }, { val: "CT", label: "Connecticut" }, { val: "DE", label: "Delaware" },
-        { val: "FL", label: "Florida" }, { val: "GA", label: "Georgia" }, { val: "HI", label: "Hawaii" }, { val: "ID", label: "Idaho" },
-        { val: "IL", label: "Illinois" }, { val: "IN", label: "Indiana" }, { val: "IA", label: "Iowa" }, { val: "KS", label: "Kansas" },
-        { val: "KY", label: "Kentucky" }, { val: "LA", label: "Louisiana" }, { val: "ME", label: "Maine" }, { val: "MD", label: "Maryland" },
-        { val: "MA", label: "Massachusetts" }, { val: "MI", label: "Michigan" }, { val: "MN", label: "Minnesota" }, { val: "MS", label: "Mississippi" },
-        { val: "MO", label: "Missouri" }, { val: "MT", label: "Montana" }, { val: "NE", label: "Nebraska" }, { val: "NV", label: "Nevada" },
-        { val: "NH", label: "New Hampshire" }, { val: "NJ", label: "New Jersey" }, { val: "NM", label: "New Mexico" }, { val: "NY", label: "New York" },
-        { val: "NC", label: "North Carolina" }, { val: "ND", label: "North Dakota" }, { val: "OH", label: "Ohio" }, { val: "OK", label: "Oklahoma" },
-        { val: "OR", label: "Oregon" }, { val: "PA", label: "Pennsylvania" }, { val: "RI", label: "Rhode Island" }, { val: "SC", label: "South Carolina" },
-        { val: "SD", label: "South Dakota" }, { val: "TN", label: "Tennessee" }, { val: "TX", label: "Texas" }, { val: "UT", label: "Utah" },
-        { val: "VT", label: "Vermont" }, { val: "VA", label: "Virginia" }, { val: "WA", label: "Washington" }, { val: "WV", label: "West Virginia" },
-        { val: "WI", label: "Wisconsin" }, { val: "WY", label: "Wyoming" }
+        { val: "Alabama", label: "Alabama" }, { val: "Alaska", label: "Alaska" }, { val: "Arizona", label: "Arizona" }, { val: "Arkansas", label: "Arkansas" },
+        { val: "California", label: "California" }, { val: "Colorado", label: "Colorado" }, { val: "Connecticut", label: "Connecticut" }, { val: "Delaware", label: "Delaware" },
+        { val: "Florida", label: "Florida" }, { val: "Georgia", label: "Georgia" }, { val: "Hawaii", label: "Hawaii" }, { val: "Idaho", label: "Idaho" },
+        { val: "Illinois", label: "Illinois" }, { val: "Indiana", label: "Indiana" }, { val: "Iowa", label: "Iowa" }, { val: "Kansas", label: "Kansas" },
+        { val: "Kentucky", label: "Kentucky" }, { val: "Louisiana", label: "Louisiana" }, { val: "Maine", label: "Maine" }, { val: "Maryland", label: "Maryland" },
+        { val: "Massachusetts", label: "Massachusetts" }, { val: "Michigan", label: "Michigan" }, { val: "Minnesota", label: "Minnesota" }, { val: "Mississippi", label: "Mississippi" },
+        { val: "Missouri", label: "Missouri" }, { val: "Montana", label: "Montana" }, { val: "Nebraska", label: "Nebraska" }, { val: "Nevada", label: "Nevada" },
+        { val: "New Hampshire", label: "New Hampshire" }, { val: "New Jersey", label: "New Jersey" }, { val: "New Mexico", label: "New Mexico" }, { val: "New York", label: "New York" },
+        { val: "North Carolina", label: "North Carolina" }, { val: "North Dakota", label: "North Dakota" }, { val: "Ohio", label: "Ohio" }, { val: "Oklahoma", label: "Oklahoma" },
+        { val: "Oregon", label: "Oregon" }, { val: "Pennsylvania", label: "Pennsylvania" }, { val: "Rhode Island", label: "Rhode Island" }, { val: "South Carolina", label: "South Carolina" },
+        { val: "South Dakota", label: "South Dakota" }, { val: "Tennessee", label: "Tennessee" }, { val: "Texas", label: "Texas" }, { val: "Utah", label: "Utah" },
+        { val: "Vermont", label: "Vermont" }, { val: "Virginia", label: "Virginia" }, { val: "Washington", label: "Washington" }, { val: "West Virginia", label: "West Virginia" },
+        { val: "Wisconsin", label: "Wisconsin" }, { val: "Wyoming", label: "Wyoming" }
     ];
 
     var PingTree = {
@@ -892,24 +892,24 @@
                                         <select class="pt-select" name="bankName" required>
                                             <option value="" disabled selected>Please select</option>
                                             <option value="Other">Other (not in the list)</option>
-                                            <option value="bancorp">Bancorp</option>
-                                            <option value="bankofamerica">Bank of America</option>
-                                            <option value="bbt">Branch Bank</option>
-                                            <option value="bonneville">Bonneville Bank</option>
-                                            <option value="chase">Chase Bank</option>
-                                            <option value="fifththird">Fifth Third Bank</option>
-                                            <option value="firstcalifornia">First California Bank</option>
-                                            <option value="fnbtexas">First National Bank Texas</option>
-                                            <option value="mt">M&T Bank</option>
-                                            <option value="meta">MetaBank</option>
-                                            <option value="navyfederal">Navy Federal Credit Union</option>
-                                            <option value="pnc">PNC Bank</option>
-                                            <option value="regions">Regions Bank</option>
-                                            <option value="suntrust">SunTrust Bank</option>
-                                            <option value="td">TD Bank</option>
-                                            <option value="usaa">USAA Federal Savings Bank</option>
-                                            <option value="usbank">US Bank</option>
-                                            <option value="wellsfargo">Wells Fargo</option>
+                                            <option value="Bancorp">Bancorp</option>
+                                            <option value="Bank of America">Bank of America</option>
+                                            <option value="Branch Bank">Branch Bank</option>
+                                            <option value="Bonneville Bank">Bonneville Bank</option>
+                                            <option value="Chase Bank">Chase Bank</option>
+                                            <option value="Fifth Third Bank">Fifth Third Bank</option>
+                                            <option value="First California Bank">First California Bank</option>
+                                            <option value="First National Bank Texas">First National Bank Texas</option>
+                                            <option value="M&T Bank">M&T Bank</option>
+                                            <option value="MetaBank">MetaBank</option>
+                                            <option value="Navy Federal Credit Union">Navy Federal Credit Union</option>
+                                            <option value="PNC Bank">PNC Bank</option>
+                                            <option value="Regions Bank">Regions Bank</option>
+                                            <option value="SunTrust Bank">SunTrust Bank</option>
+                                            <option value="TD Bank">TD Bank</option>
+                                            <option value="USAA Federal Savings Bank">USAA Federal Savings Bank</option>
+                                            <option value="US Bank">US Bank</option>
+                                            <option value="Wells Fargo">Wells Fargo</option>
                                         </select>
                                         <div class="pt-error-hint pt-error-hint-light">Selection required</div>
                                     </div>
