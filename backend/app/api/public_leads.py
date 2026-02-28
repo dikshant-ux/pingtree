@@ -2,7 +2,9 @@ from fastapi import APIRouter, Header, HTTPException, status, Request
 from app.models.user import User
 from app.models.form import LeadForm
 from app.services.ping.auction_engine import auction_engine
+from app.models.lead import LeadStatus
 from datetime import datetime
+import time
 from typing import Dict, Any, Optional
 
 router = APIRouter()
@@ -13,6 +15,8 @@ async def public_ingest_lead(
     lead_data: Dict[str, Any],
     api_key: Optional[str] = Header(None, alias="X-API-Key")
 ):
+    start_time = time.time()
+    trace = [{"timestamp": datetime.utcnow().isoformat(), "stage": "Ingestion", "status": "Received"}]
     if not api_key:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -92,7 +96,14 @@ async def public_ingest_lead(
     if validation_config:
         is_valid = await validator_service.validate_lead(validation_config, lead_data, metadata=metadata)
         if not is_valid:
-            return await generate_response(status="rejected", reason="Validation Failed")
+            trace.append({
+                "timestamp": datetime.utcnow().isoformat(),
+                "stage": "Validation",
+                "status": "Rejected",
+                "details": "External validation failed"
+            })
+            lead = await auction_engine.create_lead(lead_data, LeadStatus.INVALID, trace, start_time, metadata)
+            return await generate_response(status="Invalid Lead", lead_id=str(lead.id), reason="Validation Failed")
 
     # Execute Auction
     result = await auction_engine.run_auction(lead_data, metadata=metadata)

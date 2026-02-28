@@ -40,7 +40,7 @@ async def get_dashboard_stats(start_date: Optional[datetime] = None, end_date: O
             
         total_leads = await Lead.find(match_query).count()
         sold_leads = await Lead.find({"status": LeadStatus.SOLD, **match_query}).count()
-        rejected_leads = await Lead.find({"status": LeadStatus.REJECTED, **match_query}).count()
+        rejected_leads = await Lead.find({"status": {"$in": [LeadStatus.REJECTED, LeadStatus.INVALID]}, **match_query}).count()
         
         pipeline = [
             {"$match": {"status": LeadStatus.SOLD, **match_query}},
@@ -71,7 +71,7 @@ async def get_today_stats() -> Dict[str, Any]:
         
         total_leads = await Lead.find(match_today).count()
         sold_leads = await Lead.find({"status": LeadStatus.SOLD, **match_today}).count()
-        rejected_leads = await Lead.find({"status": LeadStatus.REJECTED, **match_today}).count()
+        rejected_leads = await Lead.find({"status": {"$in": [LeadStatus.REJECTED, LeadStatus.INVALID]}, **match_today}).count()
         
         pipeline = [
             {"$match": {"status": LeadStatus.SOLD, **match_today}},
@@ -215,7 +215,7 @@ async def get_buyer_stats(start_date: Optional[datetime] = None, end_date: Optio
 @router.get("/errors")
 async def get_error_stats(start_date: Optional[datetime] = None, end_date: Optional[datetime] = None) -> Dict[str, Any]:
     try:
-        match_stage = {"status": {"$in": [LeadStatus.REJECTED, LeadStatus.ERROR]}}
+        match_stage = {"status": {"$in": [LeadStatus.REJECTED, LeadStatus.INVALID, LeadStatus.ERROR]}}
         date_match = get_date_match(start_date, end_date)
         if date_match:
             match_stage.update(date_match)

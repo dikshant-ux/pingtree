@@ -11,6 +11,7 @@ class LeadStatus(str, Enum):
     REJECTED = "rejected"
     UNSOLD = "unsold"
     ERROR = "error"
+    INVALID = "Invalid Lead"
 
 class Lead(Document):
     lead_data: Dict[str, Any]
