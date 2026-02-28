@@ -19,8 +19,9 @@ export default function Step6_FiltersCaps({ data, updateData }: Step6Props) {
     const caps = data.caps || { daily: 0, hourly: 0 };
 
     const [availableFields, setAvailableFields] = useState<string[]>([
-        "First_Name", "Last_Name", "Email", "Phone", "Address", "City", "State", "Zip",
+        "First_Name", "Last_Name", "Email", "Phone", "Address", "Zip",
         "Dob", "Gender", "Ip_Address", "User_Agent", "click_id",
+        "city", "state", "fullState",
         "gclid", "fbp", "fbc", "utm_source", "utm_medium", "utm_campaign",
         "utm_term", "utm_content", "eventid", "unique_id", "subsource", "source",
         "loanAmount", "loanPurpose", "dob_mm", "dob_dd", "dob_yyyy", "SSN",

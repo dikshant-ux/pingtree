@@ -29,7 +29,8 @@ async def get_lead_fields():
         
     # Fallback to defaults if no data exists yet (Bootstrap)
     return [
-        "First_Name", "Last_Name", "Email", "Phone", "Address", "City", "State", "Zip",
+        "First_Name", "Last_Name", "Email", "Phone", "Address", "Zip",
+        "city", "state", "fullState",
         "Dob", "Gender", "Ip_Address", "User_Agent", "click_id",
         "gclid", "fbp", "fbc", "utm_source", "utm_medium", "utm_campaign",
         "utm_term", "utm_content", "eventid", "unique_id", "subsource", "source",

@@ -28,8 +28,9 @@ import api from "@/lib/api";
 export default function Step4_Mapping({ data, updateData }: Step4Props) {
     const mappings = data.field_mapping || [];
     const [availableFields, setAvailableFields] = useState<string[]>([
-        "First_Name", "Last_Name", "Email", "Phone", "Address", "City", "State", "Zip",
+        "First_Name", "Last_Name", "Email", "Phone", "Address", "Zip",
         "Dob", "Gender", "Ip_Address", "User_Agent", "click_id",
+        "city", "state", "fullState",
         "gclid", "fbp", "fbc", "utm_source", "utm_medium", "utm_campaign",
         "utm_term", "utm_content", "eventid", "unique_id", "subsource", "source",
         "loanAmount", "loanPurpose", "dob_mm", "dob_dd", "dob_yyyy", "SSN",
@@ -80,8 +81,9 @@ export default function Step4_Mapping({ data, updateData }: Step4Props) {
 
     const autoMapFields = () => {
         const standardFields = [
-            "First_Name", "Last_Name", "Email", "Phone", "Address", "City", "State", "Zip",
+            "First_Name", "Last_Name", "Email", "Phone", "Address", "Zip",
             "Dob", "Gender", "Ip_Address", "User_Agent", "click_id",
+            "city", "state", "fullState",
             "gclid", "fbp", "fbc", "utm_source", "utm_medium", "utm_campaign",
             "utm_term", "utm_content", "eventid", "unique_id", "subsource", "source",
             "loanAmount", "loanPurpose", "dob_mm", "dob_dd", "dob_yyyy", "SSN",
@@ -126,7 +128,7 @@ export default function Step4_Mapping({ data, updateData }: Step4Props) {
         try {
             const parsed = JSON.parse(jsonInput);
             const keys = Object.keys(parsed);
-            
+
             if (keys.length === 0) {
                 toast.error("JSON payload is empty");
                 return;
@@ -210,18 +212,18 @@ export default function Step4_Mapping({ data, updateData }: Step4Props) {
                         <SheetHeader>
                             <SheetTitle>Smart JSON Mapping</SheetTitle>
                             <SheetDescription>
-                                {previewMappings.length > 0 
+                                {previewMappings.length > 0
                                     ? "Review and adjust the detected mappings before applying them."
                                     : "Paste a sample JSON payload from your buyer to automatically detect fields."}
                             </SheetDescription>
                         </SheetHeader>
-                        
+
                         <div className="mt-6 space-y-6">
                             {previewMappings.length === 0 ? (
                                 <>
                                     <div className="space-y-2">
                                         <Label>JSON Payload</Label>
-                                        <Textarea 
+                                        <Textarea
                                             placeholder='{ "first_name": "John", "zip": "12345" }'
                                             className="h-80 font-mono text-xs"
                                             value={jsonInput}
@@ -261,7 +263,7 @@ export default function Step4_Mapping({ data, updateData }: Step4Props) {
                                             ))}
                                         </div>
                                     </div>
-                                    
+
                                     <div className="flex gap-3">
                                         <Button variant="outline" className="flex-1" onClick={() => setPreviewMappings([])}>
                                             Back to Input

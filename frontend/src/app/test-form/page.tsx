@@ -9,7 +9,7 @@ export default function TestFormPage() {
     const initializeForm = async () => {
         if (typeof window !== 'undefined' && 'PingTree' in window) {
             const PingTree = (window as any).PingTree;
-            
+
             try {
                 // Initialize with specific API key and form ID
                 await PingTree.init("5d68c65b1e50d8bf29b29778b4220ac8e367bc6073c5d576838cbd6307d36f37", {
@@ -20,11 +20,14 @@ export default function TestFormPage() {
                 PingTree.render("pt-lead-form", {
                     formId: "69a132e1f9305dec70e559b9",
                     title: "Frontend Test Form",
-                    primaryColor: "#cf0202",
+                    // primaryColor: "#cf0202",
                     onSuccess: (data: any) => console.log("Success!", data)
                 });
-            } catch (error) {
+            } catch (error: any) {
                 console.error("Failed to initialize PingTree form:", error);
+                if (error instanceof TypeError && error.message === 'Failed to fetch') {
+                    console.warn("Possible Network/CORS error. check if backend is running and endpoint is correct.");
+                }
             }
         }
     };
@@ -36,7 +39,7 @@ export default function TestFormPage() {
                     <h1 className="text-xl font-bold text-slate-900">PingTree Form Integration Test</h1>
                     <p className="text-sm text-slate-500 mt-1">Testing the JavaScript form library within the Next.js frontend.</p>
                 </div>
-                
+
                 <div className="p-8">
                     <div id="pt-lead-form" ref={containerRef}>
                         {/* The form will be injected here */}
@@ -48,8 +51,8 @@ export default function TestFormPage() {
                 </div>
             </div>
 
-            <Script 
-                src="https://js.trustedagentforyou.com/static/pingtree.js"
+            <Script
+                src="http://localhost:8000/static/pingtree.js"
                 onLoad={initializeForm}
             />
         </div>

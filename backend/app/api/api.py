@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.api import auth, buyers, pingtree, reports, users, public_leads, forms, validation, public_forms
+from app.api import auth, buyers, pingtree, reports, users, public_leads, forms, validation, public_forms, public_banks
 
 api_router = APIRouter()
 api_router.include_router(auth.router, prefix="/auth", tags=["login"])
@@ -10,6 +10,7 @@ api_router.include_router(validation.router, prefix="/validation", tags=["valida
 api_router.include_router(users.router, prefix="/users", tags=["users"])
 api_router.include_router(public_leads.router, prefix="/public/leads", tags=["public"])
 api_router.include_router(public_forms.router, prefix="/public/forms", tags=["public"])
+api_router.include_router(public_banks.router, prefix="/public/banks", tags=["public"])
 api_router.include_router(forms.router, prefix="/forms", tags=["forms"])
 
 # Test Routes (for local verification)
