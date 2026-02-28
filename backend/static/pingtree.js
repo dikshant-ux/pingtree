@@ -533,7 +533,11 @@
                     color: #fff;
                     margin-left: auto;
                 }
-                .pt-step-btn-primary:hover { filter: brightness(1.05); }
+                .pt-step-btn-primary:hover { 
+                    background: ${primaryColor} !important;
+                    border-color: ${primaryColor} !important;
+                    filter: brightness(1.1); 
+                }
 
                 .pt-footer-btn {
                     background: ${btnColor};
