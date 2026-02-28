@@ -33,14 +33,14 @@ export default function TestFormPage() {
     };
 
     return (
-        <div className="min-h-screen bg-slate-50 p-8">
-            <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div className="min-h-screen bg-slate-50 ">
+            
                 <div className="p-6 border-bottom border-slate-100 bg-slate-50/50">
                     <h1 className="text-xl font-bold text-slate-900">PingTree Form Integration Test</h1>
                     <p className="text-sm text-slate-500 mt-1">Testing the JavaScript form library within the Next.js frontend.</p>
                 </div>
 
-                <div className="p-8">
+                <div className="p-2">
                     <div id="pt-lead-form" ref={containerRef}>
                         {/* The form will be injected here */}
                         <div className="animate-pulse flex flex-col items-center justify-center p-12 text-slate-400">
@@ -49,7 +49,7 @@ export default function TestFormPage() {
                         </div>
                     </div>
                 </div>
-            </div>
+           
 
             <Script
                 src="https://js.trustedagentforyou.com/static/pingtree.js"
