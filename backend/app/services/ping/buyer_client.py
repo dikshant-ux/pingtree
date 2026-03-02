@@ -93,8 +93,8 @@ class BuyerClient:
                 success, price, redirect, reason, data = self.parse_response(buyer, response)
                 return success, price, redirect, reason, data
         except Exception as e:
-            logger.error(f"Post failed for {buyer.name}: {e}")
-            return False, 0.0, None, f"Error: {str(e)}", {}
+            logger.exception(f"Post failed for {buyer.name}: {e}")
+            return False, 0.0, None, f"Error: {repr(e)}", {}
 
     def transform_payload(self, lead_data: Dict[str, Any], mapping: list) -> Dict[str, Any]:
         if not mapping:

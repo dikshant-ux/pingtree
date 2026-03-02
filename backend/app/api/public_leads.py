@@ -54,7 +54,21 @@ async def public_ingest_lead(
     # Inject into lead data for processing/filtering/mapping
     lead_data["Ip_Address"] = ip_address
     lead_data["User_Agent"] = user_agent
-    
+
+    # Normalize Phone to +1XXXXXXXXXX (E.164)
+    if "Phone" in lead_data:
+        # Keep only digits
+        digits = "".join(filter(str.isdigit, str(lead_data["Phone"])))
+        # If it starts with 1 and is 11 digits, just add +
+        if len(digits) == 11 and digits.startswith("1"):
+            lead_data["Phone"] = "+" + digits
+        # If it's 10 digits, add +1
+        elif len(digits) == 10:
+            lead_data["Phone"] = "+1" + digits
+        # Otherwise, just try to prepend +1 if not already there (conservative)
+        elif not str(lead_data["Phone"]).startswith("+"):
+             lead_data["Phone"] = "+1" + digits
+
     metadata = {
         "form_id": lead_data.pop("form_id", None),
         "source_url": referer,
