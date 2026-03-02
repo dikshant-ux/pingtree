@@ -52,10 +52,12 @@ class BuyerClient:
                 return success, price, redirect, reason, context, raw_data
                 
         except httpx.TimeoutException:
-            return False, 0.0, None, "Timeout", {}, None
+            return False, 0.0, None, "Connection Timeout", {}, None
+        except httpx.ReadTimeout:
+            return False, 0.0, None, "Read Timeout (Buyer took too long)", {}, None
         except Exception as e:
             logger.error(f"Ping error for {buyer.name}: {e}")
-            return False, 0.0, None, f"Error: {str(e)}", {}, None
+            return False, 0.0, None, f"Error: {repr(e)}", {}, None
 
     async def post_buyer(self, buyer: Buyer, lead_data: Dict[str, Any], context: Dict[str, Any] = {}) -> Tuple[bool, float, Optional[str], str, Optional[Dict]]:
         """
@@ -92,6 +94,10 @@ class BuyerClient:
                 response = await client.post(url, json=payload, headers=headers, timeout=timeout)
                 success, price, redirect, reason, data = self.parse_response(buyer, response)
                 return success, price, redirect, reason, data
+        except httpx.TimeoutException:
+            return False, 0.0, None, "Connection Timeout", {}
+        except httpx.ReadTimeout:
+            return False, 0.0, None, "Read Timeout (Buyer took too long)", {}
         except Exception as e:
             logger.exception(f"Post failed for {buyer.name}: {e}")
             return False, 0.0, None, f"Error: {repr(e)}", {}
