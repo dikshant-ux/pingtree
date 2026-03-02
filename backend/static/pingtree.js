@@ -313,14 +313,80 @@
         },
 
         render: async function (containerId, options = {}) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+
+            // Update config from options if provided
+            if (options.apiKey) this.config.apiKey = options.apiKey;
+            if (options.endpoint) this.config.endpoint = options.endpoint;
+            if (options.formId) this.config.formId = options.formId;
+
+            // 1. Instant Premium Loader Injection
+            const loaderHtml = `
+                <div class="pt-premium-loader-wrapper">
+                    <style>
+                        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+                        .pt-premium-loader {
+                            font-family: 'Inter', sans-serif;
+                            background: #ffffff;
+                            border: 1px solid #e2e8f0;
+                            border-radius: 16px;
+                            box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+                            padding: 60px 40px;
+                            display: flex;
+                            flex-direction: column;
+                            align-items: center;
+                            justify-content: center;
+                            text-align: center;
+                            max-width: 900px;
+                            margin: 0 auto;
+                        }
+                        .pt-spinner-container { position: relative; width: 80px; height: 80px; margin-bottom: 24px; }
+                        .pt-spinner-track { position: absolute; inset: 0; border: 4px solid #f1f5f9; border-radius: 50%; }
+                        .pt-spinner-ring { position: absolute; inset: 0; border: 4px solid transparent; border-top-color: #14b8a6; border-radius: 50%; animation: pt-spin 1s linear infinite; }
+                        .pt-spinner-center { position: absolute; inset: 12px; background: #f0fdfa; border-radius: 50%; display: flex; align-items: center; justify-content: center; animation: pt-pulse 2s ease-in-out infinite; }
+                        .pt-spinner-icon { width: 24px; height: 24px; color: #0d9488; }
+                        .pt-loader-title { font-size: 18px; font-weight: 700; color: #0f172a; margin: 0 0 8px 0; }
+                        .pt-loader-subtitle { font-size: 13px; color: #64748b; max-width: 320px; margin: 0 0 20px 0; line-height: 1.5; }
+                        .pt-status-badge { display: flex; align-items: center; gap: 10px; padding: 6px 14px; background: #f8fafc; border: 1px solid #f1f5f9; border-radius: 100px; }
+                        .pt-dots { display: flex; gap: 3px; }
+                        .pt-dot { width: 5px; height: 5px; background: #14b8a6; border-radius: 50%; animation: pt-bounce 1.4s infinite ease-in-out both; }
+                        .pt-dot:nth-child(2) { animation-delay: 0.16s; }
+                        .pt-dot:nth-child(3) { animation-delay: 0.32s; }
+                        .pt-secure-label { font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; gap: 5px; }
+                        @keyframes pt-spin { to { transform: rotate(360deg); } }
+                        @keyframes pt-pulse { 0%, 100% { transform: scale(0.95); opacity: 0.5; } 50% { transform: scale(1.05); opacity: 1; } }
+                        @keyframes pt-bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
+                    </style>
+                    <div class="pt-premium-loader">
+                        <div class="pt-spinner-container">
+                            <div class="pt-spinner-track"></div>
+                            <div class="pt-spinner-ring"></div>
+                            <div class="pt-spinner-center">
+                                <svg class="pt-spinner-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                </svg>
+                            </div>
+                        </div>
+                        <h2 class="pt-loader-title">Establishing Secure Connect</h2>
+                        <p class="pt-loader-subtitle">Preparing your personalized application form...</p>
+                        <div class="pt-status-badge">
+                            <div class="pt-dots">
+                                <div class="pt-dot"></div><div class="pt-dot"></div><div class="pt-dot"></div>
+                            </div>
+                            <span class="pt-secure-label">Encrypted Connection</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            container.innerHTML = loaderHtml;
+
+            // 2. Fetch Config & Scripts (Async)
             if (options.formId && !this.config.formConfig) {
                 this.config.formId = options.formId;
                 await this.fetchFormConfig();
                 await this.loadExternalScripts();
             }
-
-            const container = document.getElementById(containerId);
-            if (!container) return;
 
             const primaryColor = options.primaryColor || '#28a745';
             const bankingBg = '#5fa08d';
@@ -1264,6 +1330,45 @@
             };
         }
     };
+
+    // --- AUTO-INITIALIZATION LOGIC ---
+    const autoInit = async () => {
+        // Find the current script tag
+        const scripts = document.getElementsByTagName('script');
+        let currentScript = null;
+        for (let i = 0; i < scripts.length; i++) {
+            if (scripts[i].src.includes('pingtree.js')) {
+                currentScript = scripts[i];
+                break;
+            }
+        }
+
+        if (currentScript) {
+            const apiKey = currentScript.getAttribute('data-api-key');
+            const formId = currentScript.getAttribute('data-form-id');
+            const containerId = currentScript.getAttribute('data-container-id');
+            const primaryColor = currentScript.getAttribute('data-primary-color');
+
+            if (apiKey && containerId) {
+                console.log("PingTree: Auto-initializing script...");
+                await PingTree.init(apiKey, { endpoint: currentScript.getAttribute('data-endpoint') });
+
+                if (formId) {
+                    PingTree.render(containerId, {
+                        formId,
+                        primaryColor: primaryColor || undefined
+                    });
+                }
+            }
+        }
+    };
+
+    // Run auto-init on load
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', autoInit);
+    } else {
+        autoInit();
+    }
 
     window.PingTree = PingTree;
 })();
