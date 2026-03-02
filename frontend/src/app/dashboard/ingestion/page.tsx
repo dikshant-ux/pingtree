@@ -477,6 +477,36 @@ export default function IngestionPage() {
                                                 <option value="rtk">RTK Script</option>
                                             </select>
                                         </div>
+                                        {config.method === 'url' && (
+                                            <div className="flex-1 space-y-1">
+                                                <label className="text-[10px] uppercase font-bold text-muted-foreground">Parameter Name</label>
+                                                <Input
+                                                    value={config.param_name}
+                                                    onChange={(e) => {
+                                                        const updated = [...newForm.click_id_configs];
+                                                        updated[index].param_name = e.target.value;
+                                                        setNewForm({ ...newForm, click_id_configs: updated });
+                                                    }}
+                                                    placeholder="click_id"
+                                                    className="h-8 text-xs"
+                                                />
+                                            </div>
+                                        )}
+                                        {config.method === 'rtk' && (
+                                            <div className="flex-[2] space-y-1">
+                                                <label className="text-[10px] uppercase font-bold text-muted-foreground">Script URL</label>
+                                                <Input
+                                                    value={config.script_url}
+                                                    onChange={(e) => {
+                                                        const updated = [...newForm.click_id_configs];
+                                                        updated[index].script_url = e.target.value;
+                                                        setNewForm({ ...newForm, click_id_configs: updated });
+                                                    }}
+                                                    placeholder="https://..."
+                                                    className="h-8 text-xs"
+                                                />
+                                            </div>
+                                        )}
                                         <Button
                                             variant="ghost"
                                             size="icon"
@@ -622,6 +652,36 @@ export default function IngestionPage() {
                                                     <option value="custom">Custom JS</option>
                                                 </select>
                                             </div>
+                                            {config.method === 'url' && (
+                                                <div className="flex-1 space-y-1">
+                                                    <label className="text-[10px] uppercase font-bold text-muted-foreground">Parameter Name</label>
+                                                    <Input
+                                                        value={config.param_name}
+                                                        onChange={(e) => {
+                                                            const updated = [...editingForm.click_id_configs];
+                                                            updated[index].param_name = e.target.value;
+                                                            setEditingForm({ ...editingForm, click_id_configs: updated });
+                                                        }}
+                                                        placeholder="click_id"
+                                                        className="h-8 text-xs"
+                                                    />
+                                                </div>
+                                            )}
+                                            {config.method === 'rtk' && (
+                                                <div className="flex-[2] space-y-1">
+                                                    <label className="text-[10px] uppercase font-bold text-muted-foreground">Script URL</label>
+                                                    <Input
+                                                        value={config.script_url}
+                                                        onChange={(e) => {
+                                                            const updated = [...editingForm.click_id_configs];
+                                                            updated[index].script_url = e.target.value;
+                                                            setEditingForm({ ...editingForm, click_id_configs: updated });
+                                                        }}
+                                                        placeholder="https://..."
+                                                        className="h-8 text-xs"
+                                                    />
+                                                </div>
+                                            )}
                                             {config.method === 'custom' && (
                                                 <div className="flex-1 space-y-1">
                                                     <label className="text-[10px] uppercase font-bold text-muted-foreground">JS Code</label>
