@@ -35,8 +35,8 @@ class ValidatorService:
 
         try:
             headers = {
-                "Origin": "https://js.trustedagentforyou.com/",
-                "Referer": "https://js.trustedagentforyou.com/"
+                "Origin": "https://pingtree.vellko.com/",
+                "Referer": "https://pingtree.vellko.com/"
             }
             async with httpx.AsyncClient(timeout=5.0) as client:
                 if config.method.upper() == "GET":
