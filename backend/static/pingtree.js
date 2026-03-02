@@ -322,34 +322,42 @@
             const container = document.getElementById(containerId);
             if (!container) return;
 
-            const primaryColor = options.primaryColor || '#28a745';
-            const bankingBg = '#5fa08d';
-            const btnColor = '#24947d';
+            // Show Loader Immediately
+            container.innerHTML = `
+                <div class="pt-form-wrapper" style="border: none; box-shadow: none;">
+                    <div class="pt-loader-container">
+                        <span class="pt-loader"></span>
+                        <div style="font-size: 14px; font-weight: 500;">Loading Secure Form...</div>
+                    </div>
+                </div>
+            `;
 
-            // Load TrustedForm script dynamically
-            const loadTrustedForm = () => {
-                if (window.__trustedFormLoaded) return;
-                window.__trustedFormLoaded = true;
-                const tf = document.createElement("script");
-                tf.type = "text/javascript";
-                tf.async = true;
-                tf.src = (document.location.protocol === "https:" ? "https://" : "http://") +
-                    "api.trustedform.com/trustedform.js?field=xxTrustedFormCertUrl";
-                document.head.appendChild(tf);
-            };
+            if (options.formId && !this.config.formConfig) {
 
-            // Call it
-            loadTrustedForm();
+                // Load TrustedForm script dynamically
+                const loadTrustedForm = () => {
+                    if (window.__trustedFormLoaded) return;
+                    window.__trustedFormLoaded = true;
+                    const tf = document.createElement("script");
+                    tf.type = "text/javascript";
+                    tf.async = true;
+                    tf.src = (document.location.protocol === "https:" ? "https://" : "http://") +
+                        "api.trustedform.com/trustedform.js?field=xxTrustedFormCertUrl";
+                    document.head.appendChild(tf);
+                };
 
-            // Inject Premium Polished CSS
-            const styleId = 'pingtree-premium-style';
-            let style = document.getElementById(styleId);
-            if (!style) {
-                style = document.createElement('style');
-                style.id = styleId;
-                document.head.appendChild(style);
-            }
-            style.textContent = `
+                // Call it
+                loadTrustedForm();
+
+                // Inject Premium Polished CSS
+                const styleId = 'pingtree-premium-style';
+                let style = document.getElementById(styleId);
+                if (!style) {
+                    style = document.createElement('style');
+                    style.id = styleId;
+                    document.head.appendChild(style);
+                }
+                style.textContent = `
                 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
                 .pt-form-wrapper {
@@ -363,7 +371,7 @@
                     overflow: hidden;
                 }
                 .pt-header {
-                    background: linear-gradient(135deg, ${primaryColor} 0%, ${btnColor} 100%);
+                    background: linear-gradient(135deg, ${options.primaryColor || '#28a745'} 0%, #24947d 100%);
                     color: #fff;
                     text-align: center;
                     padding: 40px 24px;
@@ -413,7 +421,7 @@
                     height: 100%;
                     width: 0%;
                     border-radius: 999px;
-                    background: linear-gradient(90deg, ${primaryColor} 0%, ${btnColor} 100%);
+                    background: linear-gradient(90deg, ${options.primaryColor || '#28a745'} 0%, #24947d 100%);
                     transition: width 0.25s ease;
                 }
 
@@ -459,8 +467,8 @@
                 .pt-input:hover, .pt-select:hover { border-color: #94a3b8; }
                 .pt-input:focus, .pt-select:focus {
                     outline: none;
-                    border-color: ${primaryColor};
-                    box-shadow: 0 0 0 3px ${primaryColor}22;
+                    border-color: ${options.primaryColor || '#28a745'};
+                    box-shadow: 0 0 0 3px ${options.primaryColor || '#28a745'}22;
                     background: #ffffff;
                 }
 
@@ -475,7 +483,7 @@
                 .pt-subtext b { color: #334155; }
 
                 .pt-radio-row { display: flex; flex-wrap: wrap; gap: 20px; margin-top: 6px; }
-                input[type="radio"] { accent-color: ${primaryColor}; width: 18px; height: 18px; cursor: pointer; }
+                input[type="radio"] { accent-color: ${options.primaryColor || '#28a745'}; width: 18px; height: 18px; cursor: pointer; }
                 .radio-label { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; color: #334155; font-size: 14px; }
 
                 .pt-banking {
@@ -499,7 +507,7 @@
                     color: #0f172a;
                     border: 1px solid #dbe3ea;
                 }
-                .pt-banking .pt-input:focus, .pt-banking .pt-select:focus { border-color: ${btnColor}; box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3); }
+                .pt-banking .pt-input:focus, .pt-banking .pt-select:focus { border-color: #24947d; box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3); }
 
                 .pt-bank-state-row { display: flex; align-items: center; gap: 14px; }
                 .pt-bank-state-select { flex: 1; }
@@ -526,16 +534,16 @@
                     transition: all 0.2s ease;
                 }
                 .pt-step-btn:hover { border-color: #94a3b8; background: #f8fafc; }
-                .pt-step-btn:focus-visible { outline: 3px solid ${primaryColor}22; outline-offset: 1px; }
+                .pt-step-btn:focus-visible { outline: 3px solid ${options.primaryColor || '#28a745'}22; outline-offset: 1px; }
                 .pt-step-btn-primary {
-                    background: ${primaryColor};
-                    border-color: ${primaryColor};
+                    background: ${options.primaryColor || '#28a745'};
+                    border-color: ${options.primaryColor || '#28a745'};
                     color: #fff;
                     margin-left: auto;
                 }
                 .pt-step-btn-primary:hover { 
-                    background: ${primaryColor} !important;
-                    border-color: ${primaryColor} !important;
+                    background: ${options.primaryColor || '#28a745'} !important;
+                    border-color: ${options.primaryColor || '#28a745'} !important;
                     filter: brightness(1.1); 
                 }
 
@@ -617,14 +625,39 @@
                     border-radius: 50%;
                 }
                 .pt-zip-item:last-child::after { display: none; }
+                
+                .pt-loader-container {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 80px 40px;
+                    text-align: center;
+                    color: #64748b;
+                }
+                .pt-loader {
+                    width: 48px;
+                    height: 48px;
+                    border: 5px solid #e2e8f0;
+                    border-bottom-color: ${options.primaryColor || '#28a745'};
+                    border-radius: 50%;
+                    display: inline-block;
+                    box-sizing: border-box;
+                    animation: pt-rotation 1s linear infinite;
+                    margin-bottom: 20px;
+                }
+                @keyframes pt-rotation {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
             `;
 
-            let stateOptions = STATES.map(s => `<option value="${s.val}">${s.label}</option>`).join('');
-            const siteOrigin = window.location.origin;
-            const privacyUrl = `${siteOrigin}/privacy-policy`;
-            const termsUrl = `${siteOrigin}/terms-and-conditions`;
+                let stateOptions = STATES.map(s => `<option value="${s.val}">${s.label}</option>`).join('');
+                const siteOrigin = window.location.origin;
+                const privacyUrl = `${siteOrigin}/privacy-policy`;
+                const termsUrl = `${siteOrigin}/terms-and-conditions`;
 
-            container.innerHTML = `
+                container.innerHTML = `
                 <div class="pt-form-wrapper">
                     <div class="pt-header">
                         <h1>Your loan is just a few steps away!</h1>
@@ -827,8 +860,8 @@
                                     <label class="pt-label">Are you in the military? <img src="https://img.icons8.com/material-outlined/12/94a3b8/info--v1.png"/></label>
                                     <select class="pt-select" name="isMilitary" required>
                                         <option value="" disabled selected>Please select</option>
-                                        <option value="false">No</option>
-                                        <option value="true">Yes</option>
+                                        <option value="NO">No</option>
+                                        <option value="YES">Yes</option>
                                     </select>
                                     <div class="pt-error-hint">Selection required</div>
                                 </div>
@@ -965,215 +998,171 @@
                 </div>
             `;
 
-            // VALDIATION & MASKING LOGIC
-            const form = document.getElementById('ptDesignForm');
-            const inputs = form.querySelectorAll('input, select');
+                // VALDIATION & MASKING LOGIC
+                const form = document.getElementById('ptDesignForm');
+                const inputs = form.querySelectorAll('input, select');
 
-            const validateField = (field) => {
-                const group = field.closest('.pt-group');
-                let isValid = field.checkValidity();
+                const validateField = (field) => {
+                    const group = field.closest('.pt-group');
+                    let isValid = field.checkValidity();
 
-                // Custom Regex Validations
-                if (isValid) {
-                    if (field.name === 'Email') {
-                        isValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(field.value);
-                    } else if (field.name === 'Phone') {
-                        isValid = field.value.replace(/\D/g, '').length === 10;
-                    } else if (field.name === 'SSN') {
-                        isValid = field.value.replace(/\D/g, '').length === 9;
-                    } else if (field.name === 'Zip' || field.name === 'routingNumber') {
-                        isValid = /^\d+$/.test(field.value) && field.value.length === Number(field.getAttribute('maxlength'));
+                    // Custom Regex Validations
+                    if (isValid) {
+                        if (field.name === 'Email') {
+                            isValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(field.value);
+                        } else if (field.name === 'Phone') {
+                            isValid = field.value.replace(/\D/g, '').length === 10;
+                        } else if (field.name === 'SSN') {
+                            isValid = field.value.replace(/\D/g, '').length === 9;
+                        } else if (field.name === 'Zip' || field.name === 'routingNumber') {
+                            isValid = /^\d+$/.test(field.value) && field.value.length === Number(field.getAttribute('maxlength'));
+                        }
                     }
+
+                    if (!isValid || group.dataset.zipError === 'true' || group.dataset.zipLoading === 'true') {
+                        group.classList.add('has-error');
+                        field.classList.add('is-invalid');
+                        return false;
+                    } else {
+                        group.classList.remove('has-error');
+                        field.classList.remove('is-invalid');
+                    }
+                    return true;
+                };
+
+                // Multi-step form logic
+                const sections = Array.from(form.querySelectorAll('.pt-section'));
+                const stepMeta = document.getElementById('pt-step-meta');
+                const stepPercent = document.getElementById('pt-step-percent');
+                const stepProgress = document.getElementById('pt-step-progress');
+                const bankNameField = form.querySelector('select[name="bankName"]');
+                const bankStateField = form.querySelector('select[name="bankState"]');
+                const routingField = form.querySelector('input[name="routingNumber"]');
+                const prevBtn = document.getElementById('pt-prev-btn');
+                const nextBtn = document.getElementById('pt-next-btn');
+                let currentStep = 0;
+
+                const nextPayDateField = form.querySelector('input[name="nextPayDate"]');
+                if (nextPayDateField) {
+                    nextPayDateField.min = new Date().toISOString().split('T')[0];
                 }
 
-                if (!isValid || group.dataset.zipError === 'true' || group.dataset.zipLoading === 'true') {
-                    group.classList.add('has-error');
-                    field.classList.add('is-invalid');
-                    return false;
-                } else {
-                    group.classList.remove('has-error');
-                    field.classList.remove('is-invalid');
-                }
-                return true;
-            };
+                if (bankStateField) bankStateField.disabled = true;
 
-            // Multi-step form logic
-            const sections = Array.from(form.querySelectorAll('.pt-section'));
-            const stepMeta = document.getElementById('pt-step-meta');
-            const stepPercent = document.getElementById('pt-step-percent');
-            const stepProgress = document.getElementById('pt-step-progress');
-            const bankNameField = form.querySelector('select[name="bankName"]');
-            const bankStateField = form.querySelector('select[name="bankState"]');
-            const routingField = form.querySelector('input[name="routingNumber"]');
-            const prevBtn = document.getElementById('pt-prev-btn');
-            const nextBtn = document.getElementById('pt-next-btn');
-            let currentStep = 0;
+                const showStep = (targetStep) => {
+                    currentStep = Math.max(0, Math.min(targetStep, sections.length - 1));
+                    sections.forEach((section, idx) => {
+                        section.classList.toggle('pt-step-hidden', idx !== currentStep);
+                    });
+                    const currentLabelEl = sections[currentStep].querySelector('.pt-section-label');
+                    const currentLabel = currentLabelEl ? currentLabelEl.textContent.trim() : `Step ${currentStep + 1}`;
+                    const progressPercent = Math.round(((currentStep + 1) / sections.length) * 100);
+                    if (stepMeta) {
+                        stepMeta.textContent = `Step ${currentStep + 1} of ${sections.length}: ${currentLabel}`;
+                    }
+                    if (stepPercent) {
+                        stepPercent.textContent = `${progressPercent}%`;
+                    }
+                    if (stepProgress) {
+                        stepProgress.style.width = `${progressPercent}%`;
+                    }
+                    prevBtn.style.display = currentStep === 0 ? 'none' : 'inline-flex';
+                    nextBtn.style.display = currentStep === sections.length - 1 ? 'none' : 'inline-flex';
+                };
 
-            const nextPayDateField = form.querySelector('input[name="nextPayDate"]');
-            if (nextPayDateField) {
-                nextPayDateField.min = new Date().toISOString().split('T')[0];
-            }
+                const validateStep = (stepIdx) => {
+                    const step = sections[stepIdx];
+                    if (!step) return true;
+                    let valid = true;
+                    step.querySelectorAll('input, select').forEach((field) => {
+                        if (!validateField(field)) valid = false;
+                    });
+                    return valid;
+                };
 
-            if (bankStateField) bankStateField.disabled = true;
+                // Masking Functions
+                const maskPhone = (v) => {
+                    let x = v.replace(/\D/g, '').match(/(\d{0,3})(\d{0,3})(\d{0,4})/);
+                    return !x[2] ? x[1] : '(' + x[1] + ') ' + x[2] + (x[3] ? '-' + x[3] : '');
+                };
 
-            const showStep = (targetStep) => {
-                currentStep = Math.max(0, Math.min(targetStep, sections.length - 1));
-                sections.forEach((section, idx) => {
-                    section.classList.toggle('pt-step-hidden', idx !== currentStep);
+                const maskSSN = (v) => {
+                    let x = v.replace(/\D/g, '').match(/(\d{0,3})(\d{0,2})(\d{0,4})/);
+                    return !x[2] ? x[1] : x[1] + '-' + x[2] + (x[3] ? '-' + x[3] : '');
+                };
+
+                inputs.forEach(input => {
+                    input.addEventListener('input', (e) => {
+                        if (input.name === 'Phone') e.target.value = maskPhone(e.target.value);
+                        if (input.name === 'SSN') e.target.value = maskSSN(e.target.value);
+                        if (input.classList.contains('is-invalid')) validateField(input);
+                    });
+                    input.addEventListener('blur', () => validateField(input));
                 });
-                const currentLabelEl = sections[currentStep].querySelector('.pt-section-label');
-                const currentLabel = currentLabelEl ? currentLabelEl.textContent.trim() : `Step ${currentStep + 1}`;
-                const progressPercent = Math.round(((currentStep + 1) / sections.length) * 100);
-                if (stepMeta) {
-                    stepMeta.textContent = `Step ${currentStep + 1} of ${sections.length}: ${currentLabel}`;
-                }
-                if (stepPercent) {
-                    stepPercent.textContent = `${progressPercent}%`;
-                }
-                if (stepProgress) {
-                    stepProgress.style.width = `${progressPercent}%`;
-                }
-                prevBtn.style.display = currentStep === 0 ? 'none' : 'inline-flex';
-                nextBtn.style.display = currentStep === sections.length - 1 ? 'none' : 'inline-flex';
-            };
 
-            const validateStep = (stepIdx) => {
-                const step = sections[stepIdx];
-                if (!step) return true;
-                let valid = true;
-                step.querySelectorAll('input, select').forEach((field) => {
-                    if (!validateField(field)) valid = false;
-                });
-                return valid;
-            };
+                const zipField = form.querySelector('input[name="Zip"]');
+                if (zipField) {
+                    zipField.addEventListener('input', async (e) => {
+                        const zip = e.target.value.replace(/\D/g, '');
+                        const group = zipField.closest('.pt-group');
 
-            // Masking Functions
-            const maskPhone = (v) => {
-                let x = v.replace(/\D/g, '').match(/(\d{0,3})(\d{0,3})(\d{0,4})/);
-                return !x[2] ? x[1] : '(' + x[1] + ') ' + x[2] + (x[3] ? '-' + x[3] : '');
-            };
-
-            const maskSSN = (v) => {
-                let x = v.replace(/\D/g, '').match(/(\d{0,3})(\d{0,2})(\d{0,4})/);
-                return !x[2] ? x[1] : x[1] + '-' + x[2] + (x[3] ? '-' + x[3] : '');
-            };
-
-            inputs.forEach(input => {
-                input.addEventListener('input', (e) => {
-                    if (input.name === 'Phone') e.target.value = maskPhone(e.target.value);
-                    if (input.name === 'SSN') e.target.value = maskSSN(e.target.value);
-                    if (input.classList.contains('is-invalid')) validateField(input);
-                });
-                input.addEventListener('blur', () => validateField(input));
-            });
-
-            const zipField = form.querySelector('input[name="Zip"]');
-            if (zipField) {
-                zipField.addEventListener('input', async (e) => {
-                    const zip = e.target.value.replace(/\D/g, '');
-                    const group = zipField.closest('.pt-group');
-
-                    // Clear previous dynamic fields
-                    const existingSuccess = group.querySelector('.pt-zip-success');
-                    if (existingSuccess) existingSuccess.remove();
-                    group.querySelectorAll('input[type="hidden"]').forEach(h => h.remove());
-                    delete group.dataset.zipError;
-                    delete group.dataset.zipLoading;
-
-                    if (zip.length === 5) {
-                        group.dataset.zipLoading = 'true';
-                        const details = await this.fetchZipDetails(zip);
-
+                        // Clear previous dynamic fields
+                        const existingSuccess = group.querySelector('.pt-zip-success');
+                        if (existingSuccess) existingSuccess.remove();
+                        group.querySelectorAll('input[type="hidden"]').forEach(h => h.remove());
+                        delete group.dataset.zipError;
                         delete group.dataset.zipLoading;
 
-                        // Check again because user might have typed more or deleted during fetch
-                        if (zipField.value.replace(/\D/g, '') !== zip) return;
+                        if (zip.length === 5) {
+                            group.dataset.zipLoading = 'true';
+                            const details = await this.fetchZipDetails(zip);
 
-                        if (details) {
-                            // Valid Zip
-                            const successDiv = document.createElement('div');
-                            successDiv.className = 'omForm-group__field is-success pt-zip-success';
-                            successDiv.innerHTML = `
+                            delete group.dataset.zipLoading;
+
+                            // Check again because user might have typed more or deleted during fetch
+                            if (zipField.value.replace(/\D/g, '') !== zip) return;
+
+                            if (details) {
+                                // Valid Zip
+                                const successDiv = document.createElement('div');
+                                successDiv.className = 'omForm-group__field is-success pt-zip-success';
+                                successDiv.innerHTML = `
                                 <span id="omForm-city-placeholder" class="omForm-address-placeholder__item pt-zip-item">${details.city}</span>
                                 <span id="omForm-fullState-placeholder" class="omForm-address-placeholder__item pt-zip-item">${details.fullState}</span>
                             `;
-                            group.appendChild(successDiv);
+                                group.appendChild(successDiv);
 
-                            // Hidden inputs for submission
-                            const hCity = document.createElement('input');
-                            hCity.type = 'hidden'; hCity.name = 'city'; hCity.value = details.city.toUpperCase();
-                            hCity.className = 'is-filled';
-                            const hState = document.createElement('input');
-                            hState.type = 'hidden'; hState.name = 'state'; hState.value = details.state;
-                            hState.className = 'is-filled';
-                            const hFullState = document.createElement('input');
-                            hFullState.type = 'hidden'; hFullState.name = 'fullState'; hFullState.value = details.fullState;
-                            hFullState.className = 'is-filled';
+                                // Hidden inputs for submission
+                                const hCity = document.createElement('input');
+                                hCity.type = 'hidden'; hCity.name = 'city'; hCity.value = details.city.toUpperCase();
+                                hCity.className = 'is-filled';
+                                const hState = document.createElement('input');
+                                hState.type = 'hidden'; hState.name = 'state'; hState.value = details.state;
+                                hState.className = 'is-filled';
+                                const hFullState = document.createElement('input');
+                                hFullState.type = 'hidden'; hFullState.name = 'fullState'; hFullState.value = details.fullState;
+                                hFullState.className = 'is-filled';
 
-                            group.appendChild(hCity);
-                            group.appendChild(hState);
-                            group.appendChild(hFullState);
+                                group.appendChild(hCity);
+                                group.appendChild(hState);
+                                group.appendChild(hFullState);
 
-                            zipField.classList.remove('is-invalid');
-                            group.classList.remove('has-error');
-                        } else {
-                            // Invalid/Unsupported Zip
-                            const errMsg = "We're sorry, we currently do not offer any services in your state. Please check back with us in the future. If you have any questions, please don't hesitate to contact our customer service team. Thank you!";
-                            console.error(errMsg);
-                            alert(errMsg);
-                            zipField.classList.add('is-invalid');
-                            group.classList.add('has-error');
-                            group.dataset.zipError = 'true';
+                                zipField.classList.remove('is-invalid');
+                                group.classList.remove('has-error');
+                            } else {
+                                // Invalid/Unsupported Zip
+                                const errMsg = "We're sorry, we currently do not offer any services in your state. Please check back with us in the future. If you have any questions, please don't hesitate to contact our customer service team. Thank you!";
+                                console.error(errMsg);
+                                alert(errMsg);
+                                zipField.classList.add('is-invalid');
+                                group.classList.add('has-error');
+                                group.dataset.zipError = 'true';
+                            }
                         }
-                    }
-                });
-            }
-
-            nextBtn.addEventListener('click', () => {
-                const isCurrentStepValid = validateStep(currentStep);
-                if (!isCurrentStepValid) {
-                    const firstError = sections[currentStep].querySelector('.is-invalid');
-                    if (firstError) firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    return;
+                    });
                 }
-                showStep(currentStep + 1);
-            });
 
-            prevBtn.addEventListener('click', () => showStep(currentStep - 1));
-            showStep(0);
-
-            if (bankNameField && bankStateField && routingField) {
-                bankNameField.addEventListener('change', async () => {
-                    const bankName = bankNameField.value;
-
-                    bankStateField.value = "";
-                    routingField.value = "";
-                    bankStateField.disabled = !bankName;
-
-                    if (!bankName) return;
-
-                    const details = await this.fetchBankDetails(bankName);
-                    if (!details) return;
-
-                    if (details.state && bankStateField.querySelector(`option[value="${details.state}"]`)) {
-                        bankStateField.value = details.state;
-                        bankStateField.classList.remove('is-invalid');
-                        const bankStateGroup = bankStateField.closest('.pt-group');
-                        if (bankStateGroup) bankStateGroup.classList.remove('has-error');
-                    }
-                    if (details.routing_number) {
-                        routingField.value = details.routing_number;
-                        routingField.classList.remove('is-invalid');
-                        const routingGroup = routingField.closest('.pt-group');
-                        if (routingGroup) routingGroup.classList.remove('has-error');
-                    }
-                });
-            }
-
-            form.onsubmit = async (e) => {
-                e.preventDefault();
-
-                if (currentStep < sections.length - 1) {
+                nextBtn.addEventListener('click', () => {
                     const isCurrentStepValid = validateStep(currentStep);
                     if (!isCurrentStepValid) {
                         const firstError = sections[currentStep].querySelector('.is-invalid');
@@ -1181,87 +1170,146 @@
                         return;
                     }
                     showStep(currentStep + 1);
-                    return;
-                }
+                });
 
-                let isFormValid = true;
-                inputs.forEach(input => { if (!validateField(input)) isFormValid = false; });
+                prevBtn.addEventListener('click', () => showStep(currentStep - 1));
+                showStep(0);
 
-                if (!isFormValid) {
-                    const firstError = form.querySelector('.is-invalid');
-                    if (firstError) {
-                        const errorSection = firstError.closest('.pt-section');
-                        const errorStepIdx = sections.indexOf(errorSection);
-                        if (errorStepIdx >= 0 && errorStepIdx !== currentStep) {
-                            showStep(errorStepIdx);
+                if (bankNameField && bankStateField && routingField) {
+                    bankNameField.addEventListener('change', async () => {
+                        const bankName = bankNameField.value;
+
+                        bankStateField.value = "";
+                        routingField.value = "";
+                        bankStateField.disabled = !bankName;
+
+                        if (!bankName) return;
+
+                        const details = await this.fetchBankDetails(bankName);
+                        if (!details) return;
+
+                        if (details.state && bankStateField.querySelector(`option[value="${details.state}"]`)) {
+                            bankStateField.value = details.state;
+                            bankStateField.classList.remove('is-invalid');
+                            const bankStateGroup = bankStateField.closest('.pt-group');
+                            if (bankStateGroup) bankStateGroup.classList.remove('has-error');
                         }
-                        firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    }
-                    return;
+                        if (details.routing_number) {
+                            routingField.value = details.routing_number;
+                            routingField.classList.remove('is-invalid');
+                            const routingGroup = routingField.closest('.pt-group');
+                            if (routingGroup) routingGroup.classList.remove('has-error');
+                        }
+                    });
                 }
 
-                const btn = document.getElementById('pt-submit-btn');
-                const status = document.getElementById('pt-form-status');
+                form.onsubmit = async (e) => {
+                    e.preventDefault();
 
-                btn.disabled = true;
-                btn.innerText = 'Processing your application...';
-
-                const formData = new FormData(form);
-                const data = Object.fromEntries(formData.entries());
-                data.dob = `${data.dob_yyyy}-${data.dob_mm}-${data.dob_dd}`;
-
-                // Add Tracking Metadata
-                if (options.formId) data.form_id = options.formId;
-                data.source_url = window.location.href;
-                data.source_domain = window.location.host;
-
-                // Wait for TrustedForm certificate
-                const tfCert = await this.waitForTrustedForm();
-                if (tfCert) {
-                    data.trusted_form_url = tfCert;
-                    const match = tfCert.match(/trustedform.com\/([^\/?#]+)/);
-                    if (match) {
-                        data.trusted_form_token = match[1];
+                    if (currentStep < sections.length - 1) {
+                        const isCurrentStepValid = validateStep(currentStep);
+                        if (!isCurrentStepValid) {
+                            const firstError = sections[currentStep].querySelector('.is-invalid');
+                            if (firstError) firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            return;
+                        }
+                        showStep(currentStep + 1);
+                        return;
                     }
-                } else {
-                    console.warn("TrustedForm certificate not ready");
-                }
 
-                try {
-                    const res = await this.submit(data);
+                    let isFormValid = true;
+                    inputs.forEach(input => { if (!validateField(input)) isFormValid = false; });
 
-                    // Handle Redirection if URL is provided (Sold redirect or Reject redirect)
-                    if (res.redirect_url) {
-                        form.innerHTML = `
+                    if (!isFormValid) {
+                        const firstError = form.querySelector('.is-invalid');
+                        if (firstError) {
+                            const errorSection = firstError.closest('.pt-section');
+                            const errorStepIdx = sections.indexOf(errorSection);
+                            if (errorStepIdx >= 0 && errorStepIdx !== currentStep) {
+                                showStep(errorStepIdx);
+                            }
+                            firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                        return;
+                    }
+
+                    const btn = document.getElementById('pt-submit-btn');
+                    const status = document.getElementById('pt-form-status');
+
+                    btn.disabled = true;
+                    btn.innerText = 'Processing your application...';
+
+                    const formData = new FormData(form);
+                    const data = Object.fromEntries(formData.entries());
+                    data.dob = `${data.dob_yyyy}-${data.dob_mm}-${data.dob_dd}`;
+
+                    // Add Tracking Metadata
+                    if (options.formId) data.form_id = options.formId;
+                    data.source_url = window.location.href;
+                    data.source_domain = window.location.host;
+
+                    // Wait for TrustedForm certificate
+                    const tfCert = await this.waitForTrustedForm();
+                    if (tfCert) {
+                        data.trusted_form_url = tfCert;
+                        const match = tfCert.match(/trustedform.com\/([^\/?#]+)/);
+                        if (match) {
+                            data.trusted_form_token = match[1];
+                        }
+                    } else {
+                        console.warn("TrustedForm certificate not ready");
+                    }
+
+                    try {
+                        const res = await this.submit(data);
+
+                        // Handle Redirection if URL is provided (Sold redirect or Reject redirect)
+                        if (res.redirect_url) {
+                            form.innerHTML = `
                             <div class="pt-success-msg">
                                 <h2>${res.status === 'sold' ? 'Redirecting...' : 'Thank You!'}</h2>
                                 <p>${res.status === 'sold' ? 'Hold on! We are taking you to your next step.' : 'Redirecting you to our partner page...'}</p>
                             </div>
                         `;
-                        setTimeout(() => {
-                            window.location.href = res.redirect_url;
-                        }, 1500);
-                        return;
-                    }
+                            setTimeout(() => {
+                                window.location.href = res.redirect_url;
+                            }, 1500);
+                            return;
+                        }
 
-                    // Otherwise show success / thank you
-                    form.innerHTML = `
+                        // Otherwise show success / thank you
+                        form.innerHTML = `
                         <div class="pt-success-msg">
                             <h2>${res.status === 'sold' ? 'Application Success!' : 'Thank You!'}</h2>
                             <p>Reference ID: <b>${res.lead_id}</b></p>
                             <p class="pt-success-copy">
                                 ${res.status === 'sold'
-                            ? "Your application was accepted! We'll contact you shortly via email with the next steps."
-                            : "Thank you for your submission. Our team will review your application and get back to you if there's a match."}
+                                ? "Your application was accepted! We'll contact you shortly via email with the next steps."
+                                : "Thank you for your submission. Our team will review your application and get back to you if there's a match."}
                             </p>
                         </div>
                     `;
-                } catch (err) {
-                    btn.disabled = false;
-                    btn.innerText = 'Agree and Submit';
-                    status.innerHTML = `<div class="pt-status-error">${err.message || 'Error submitting lead. Please check your data and try again.'}</div>`;
-                }
-            };
+                    } catch (err) {
+                        btn.disabled = false;
+                        btn.innerText = 'Agree and Submit';
+                        status.innerHTML = `<div class="pt-status-error">${err.message || 'Error submitting lead. Please check your data and try again.'}</div>`;
+                    }
+                };
+                showStep(0);
+            }
+        },
+
+        submit: async function (data) {
+            const res = await fetch(this.config.endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-API-KEY': this.config.apiKey },
+                body: JSON.stringify(data)
+            });
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.message || 'Submission failed');
+            }
+            return await res.json();
         }
     };
 
