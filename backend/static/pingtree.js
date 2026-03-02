@@ -1276,6 +1276,11 @@
                 const data = Object.fromEntries(formData.entries());
                 data.dob = `${data.dob_yyyy}-${data.dob_mm}-${data.dob_dd}`;
 
+                // Format Phone to +1XXXXXXXXXX
+                if (data.Phone) {
+                    data.Phone = '+1' + data.Phone.replace(/\D/g, '');
+                }
+
                 // Add Tracking Metadata
                 if (options.formId) data.form_id = options.formId;
                 data.source_url = window.location.href;
