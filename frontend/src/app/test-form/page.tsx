@@ -83,7 +83,7 @@ export default function TestFormPage() {
 
 
             <Script
-                src="http://localhost:8000/static/pingtree.js"
+                src="https://pingtree.vellko.com/static/pingtree.js"
                 onLoad={initializeForm}
             />
         </div>
