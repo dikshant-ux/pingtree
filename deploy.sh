@@ -6,7 +6,7 @@ if [ -f "backend/.env" ]; then
     # Extracting the host from BASE_URL
     DOMAIN=$(grep BASE_URL backend/.env | cut -d'=' -f2 | sed 's/https\?:\/\///' | sed 's/\/.*//')
 else
-    DOMAIN="js.trustedagentforyou.com"
+    DOMAIN="pingtree.vellko.com"
 fi
 EMAIL="dikshantbhatiya21@gmail.com"
 
