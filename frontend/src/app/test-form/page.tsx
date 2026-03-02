@@ -52,7 +52,7 @@ export default function TestFormPage() {
            
 
             <Script
-                src="https://js.trustedagentforyou.com/static/pingtree.js"
+                src="https://pingtree.vellko.com/static/pingtree.js"
                 onLoad={initializeForm}
             />
         </div>
