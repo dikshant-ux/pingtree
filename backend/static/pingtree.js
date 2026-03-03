@@ -1161,6 +1161,8 @@
                     altInput: true,
                     altFormat: "F j, Y",
                     disableMobile: "true",
+                    monthSelectorType: "dropdown",
+                    static: true,
                     onChange: (selectedDates, dateStr, instance) => {
                         validateField(instance.input);
                     }
