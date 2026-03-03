@@ -406,14 +406,6 @@
                 document.head.appendChild(tf);
             };
 
-            // Load Flatpickr CSS if not present
-            if (!document.getElementById('fp-style')) {
-                const link = document.createElement('link');
-                link.id = 'fp-style';
-                link.rel = 'stylesheet';
-                link.href = 'https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css';
-                document.head.appendChild(link);
-            }
 
             // Call it
             loadTrustedForm();
@@ -651,12 +643,6 @@
                 .pt-success-copy { margin-top: 20px; }
                 .pt-status-error { color: #dc2626; margin-top: 20px; text-align: center; font-weight: 600; }
 
-                /* Flatpickr Custom Styling */
-                .flatpickr-calendar { box-shadow: 0 10px 40px rgba(15, 23, 42, 0.15); border-radius: 14px; border: 1px solid #e2e8f0; padding: 4px; font-family: 'Inter', sans-serif; }
-                .flatpickr-day.selected { background: ${primaryColor} !important; border-color: ${primaryColor} !important; }
-                .flatpickr-day.today { border-color: ${primaryColor}; }
-                .flatpickr-day:hover { background: #f1f5f9; }
-                .flatpickr-current-month { font-weight: 600; color: #0f172a; }
 
                 @media (max-width: 900px) {
                     .pt-section { grid-template-columns: 1fr; gap: 14px; }
@@ -817,7 +803,7 @@
                                 </div>
                                 <div class="pt-group">
                                     <label class="pt-label">Date of Birth</label>
-                                    <input type="text" class="pt-input pt-datepicker" name="dob" placeholder="Select your birth date" readonly required>
+                                    <input type="date" class="pt-input" name="dob" required>
                                     <div class="pt-error-hint">Date of Birth is required (18+)</div>
                                 </div>
                                 <div class="pt-group">
@@ -868,7 +854,7 @@
                                 </div>
                                 <div class="pt-group">
                                     <label class="pt-label">Next Paydate</label>
-                                    <input type="text" class="pt-input pt-datepicker" name="nextPayDate" placeholder="Select next paydate" readonly required>
+                                    <input type="date" class="pt-input" name="nextPayDate" required>
                                     <div class="pt-error-hint">Next paydate is required</div>
                                 </div>
                                 <div class="pt-group">
@@ -1155,44 +1141,20 @@
                 return !x[2] ? x[1] : x[1] + '-' + x[2] + (x[3] ? '-' + x[3] : '');
             };
 
-            const initDatePickers = () => {
-                const commonConfig = {
-                    dateFormat: "Y-m-d",
-                    altInput: true,
-                    altFormat: "F j, Y",
-                    disableMobile: "true",
-                    monthSelectorType: "dropdown",
-                    static: true,
-                    onChange: (selectedDates, dateStr, instance) => {
-                        validateField(instance.input);
-                    }
-                };
-
-                const setup = () => {
-                    // DOB: Range up to today
-                    window.flatpickr('input[name="dob"]', {
-                        ...commonConfig,
-                        maxDate: "today"
-                    });
-                    // Next Paydate: Future dates only
-                    window.flatpickr('input[name="nextPayDate"]', {
-                        ...commonConfig,
-                        minDate: "today"
-                    });
-                };
-
-                if (!window.flatpickr) {
-                    const script = document.createElement('script');
-                    script.src = 'https://cdn.jsdelivr.net/npm/flatpickr';
-                    script.onload = setup;
-                    document.head.appendChild(script);
-                } else {
-                    setup();
-                }
-            };
-            initDatePickers();
 
             inputs.forEach(input => {
+                if (input.type === 'date') {
+                    input.addEventListener('click', () => {
+                        try {
+                            if (typeof input.showPicker === 'function') {
+                                input.showPicker();
+                            }
+                        } catch (err) {
+                            console.error('showPicker error:', err);
+                        }
+                    });
+                }
+
                 input.addEventListener('input', (e) => {
                     if (input.name === 'Phone') e.target.value = maskPhone(e.target.value);
                     if (input.name === 'SSN') e.target.value = maskSSN(e.target.value);
