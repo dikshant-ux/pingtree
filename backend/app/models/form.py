@@ -14,6 +14,7 @@ class LeadForm(Document):
     name: str = Field(..., description="Internal reference name")
     title: str = Field(..., description="Public form title displayed to user")
     primary_color: str = Field(default="#28a745")
+    style: str = Field(default="multi-step", description="Form display style: 'multi-step' or 'single-step'")
     allowed_domains: list[str] = Field(default_factory=list, description="List of domains allowed to embed this form")
     is_active: bool = True
     reject_redirect_url: Optional[str] = Field(None, description="URL to redirect user if lead is rejected")

@@ -15,5 +15,6 @@ async def get_public_form(id: str):
         "id": str(form.id),
         "title": form.title,
         "primary_color": form.primary_color,
+        "style": getattr(form, 'style', 'multi-step'),
         "click_id_configs": form.click_id_configs
     }

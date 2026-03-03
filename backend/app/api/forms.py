@@ -11,6 +11,7 @@ class LeadFormCreate(BaseModel):
     name: str
     title: str
     primary_color: str = "#28a745"
+    style: str = "multi-step"
     allowed_domains: List[str] = []
     reject_redirect_url: Optional[str] = None
     click_id_configs: List[ClickIdConfig] = []
@@ -19,6 +20,7 @@ class LeadFormUpdate(BaseModel):
     name: Optional[str] = None
     title: Optional[str] = None
     primary_color: Optional[str] = None
+    style: Optional[str] = None
     allowed_domains: Optional[List[str]] = None
     is_active: Optional[bool] = None
     reject_redirect_url: Optional[str] = None

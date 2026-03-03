@@ -320,6 +320,7 @@
             if (options.apiKey) this.config.apiKey = options.apiKey;
             if (options.endpoint) this.config.endpoint = options.endpoint;
             if (options.formId) this.config.formId = options.formId;
+            if (options.style) this.config.style = options.style;
 
             // 1. Instant Premium Loader Injection
             const loaderHtml = `
@@ -389,8 +390,9 @@
             }
 
             const primaryColor = options.primaryColor || '#28a745';
-            const bankingBg = '#5fa08d';
-            const btnColor = '#24947d';
+
+            // Override style from formConfig if not explicitly passed in options
+            const formStyle = options.style || (this.config.formConfig ? this.config.formConfig.style : 'multi-step');
 
             // Load TrustedForm script dynamically
             const loadTrustedForm = () => {
@@ -428,8 +430,18 @@
                     box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
                     overflow: hidden;
                 }
+                .pt-form-single-step .pt-section {
+                    border-bottom: 1px solid #e2e8f0;
+                    padding-bottom: 24px;
+                    margin-bottom: 24px;
+                }
+                .pt-form-single-step .pt-section-no-border {
+                    border-bottom: none;
+                    padding-bottom: 0;
+                    margin-bottom: 0;
+                }
                 .pt-header {
-                    background: linear-gradient(135deg, ${primaryColor} 0%, ${btnColor} 100%);
+                    background: ${primaryColor};
                     color: #fff;
                     text-align: center;
                     padding: 40px 24px;
@@ -479,7 +491,7 @@
                     height: 100%;
                     width: 0%;
                     border-radius: 999px;
-                    background: linear-gradient(90deg, ${primaryColor} 0%, ${btnColor} 100%);
+                    background: ${primaryColor};
                     transition: width 0.25s ease;
                 }
 
@@ -545,12 +557,13 @@
                 .radio-label { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; color: #334155; font-size: 14px; }
 
                 .pt-banking {
-                    background: linear-gradient(165deg, ${bankingBg} 0%, #4f8a79 100%);
+                    background: ${primaryColor};
                     padding: 28px;
                     border-radius: 14px;
                     color: #ffffff;
                     margin-top: 6px;
                     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 10px 24px rgba(15, 23, 42, 0.2);
+                    filter: brightness(0.9);
                 }
                 .pt-banking h3 {
                     font-size: 15px;
@@ -565,7 +578,7 @@
                     color: #0f172a;
                     border: 1px solid #dbe3ea;
                 }
-                .pt-banking .pt-input:focus, .pt-banking .pt-select:focus { border-color: ${btnColor}; box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3); }
+                .pt-banking .pt-input:focus, .pt-banking .pt-select:focus { border-color: ${primaryColor}; box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3); }
 
                 .pt-bank-state-row { display: flex; align-items: center; gap: 14px; }
                 .pt-bank-state-select { flex: 1; }
@@ -606,8 +619,8 @@
                 }
 
                 .pt-footer-btn {
-                    background: ${btnColor};
-                    color: #fff;
+                    background: #ffffff;
+                    color: ${primaryColor};
                     border: none;
                     padding: 16px 24px;
                     font-weight: 700;
@@ -615,8 +628,8 @@
                     border-radius: 10px;
                     cursor: pointer;
                     width: 100%;
-                    transition: transform 0.2s ease, filter 0.2s ease, box-shadow 0.2s ease;
-                    box-shadow: 0 10px 20px rgba(8, 47, 73, 0.2);
+                    transition: transform 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+                    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
                 }
                 .pt-footer-btn:hover { filter: brightness(1.05); transform: translateY(-1px); box-shadow: 0 12px 24px rgba(8, 47, 73, 0.25); }
                 .pt-footer-btn:active { transform: translateY(0); }
@@ -696,17 +709,17 @@
                         <h1>Your loan is just a few steps away!</h1>
                         <p>Get your loan online as soon as next business day!</p>
                     </div>
-                    <form id="ptDesignForm" class="pt-body" novalidate>
+                    <form id="ptDesignForm" class="pt-body ${formStyle === 'single-step' ? 'pt-form-single-step' : ''}" novalidate>
                         <h2 class="pt-main-title">Get a decision online in minutes with no paperwork</h2>
-                        <div class="pt-progress-wrap">
-                            <div class="pt-progress-head">
-                                <div id="pt-step-meta" class="pt-step-meta"></div>
-                                <div id="pt-step-percent" class="pt-step-percent"></div>
+                            <div id="pt-progress-container" class="pt-progress-wrap" ${formStyle === 'single-step' ? 'style="display:none;"' : ''}>
+                                <div class="pt-progress-head">
+                                    <div id="pt-step-meta" class="pt-step-meta"></div>
+                                    <div id="pt-step-percent" class="pt-step-percent"></div>
+                                </div>
+                                <div class="pt-progress-track">
+                                    <div id="pt-step-progress" class="pt-progress-fill"></div>
+                                </div>
                             </div>
-                            <div class="pt-progress-track">
-                                <div id="pt-step-progress" class="pt-progress-fill"></div>
-                            </div>
-                        </div>
                         
                         <!-- Section: YOUR LOAN -->
                         <div class="pt-section">
@@ -788,21 +801,8 @@
                                 </div>
                                 <div class="pt-group">
                                     <label class="pt-label">Date of Birth</label>
-                                    <div class="pt-dob-grid">
-                                        <select class="pt-select" name="dob_mm" required>
-                                            <option value="">MM</option>
-                                            ${[...Array(12).keys()].map(i => `<option value="${String(i + 1).padStart(2, '0')}">${String(i + 1).padStart(2, '0')}</option>`).join('')}
-                                        </select>
-                                        <select class="pt-select" name="dob_dd" required>
-                                            <option value="">DD</option>
-                                            ${[...Array(31).keys()].map(i => `<option value="${String(i + 1).padStart(2, '0')}">${String(i + 1).padStart(2, '0')}</option>`).join('')}
-                                        </select>
-                                        <select class="pt-select" name="dob_yyyy" required>
-                                            <option value="">YYYY</option>
-                                            ${[...Array(80).keys()].map(i => `<option value="${2007 - i}">${2007 - i}</option>`).join('')}
-                                        </select>
-                                    </div>
-                                    <div class="pt-error-hint">Must be 18 or older</div>
+                                    <input type="date" class="pt-input" name="dob" required>
+                                    <div class="pt-error-hint">Date of Birth is required (18+)</div>
                                 </div>
                                 <div class="pt-group">
                                     <label class="pt-label">Primary Phone Number <img src="https://img.icons8.com/material-outlined/12/94a3b8/info--v1.png"/></label>
@@ -1022,7 +1022,7 @@
                             </div>
                         </div>
 
-                        <div class="pt-step-nav">
+                        <div class="pt-step-nav" ${formStyle === 'single-step' ? 'style="display:none;"' : ''}>
                             <button type="button" class="pt-step-btn" id="pt-prev-btn">Back</button>
                             <button type="button" class="pt-step-btn pt-step-btn-primary" id="pt-next-btn">Continue</button>
                         </div>
@@ -1047,6 +1047,17 @@
                         isValid = field.value.replace(/\D/g, '').length === 10;
                     } else if (field.name === 'SSN') {
                         isValid = field.value.replace(/\D/g, '').length === 9;
+                    } else if (field.name === 'dob') {
+                        const birthDate = new Date(field.value);
+                        const now = new Date();
+                        if (!isNaN(birthDate.getTime())) {
+                            const age = now.getFullYear() - birthDate.getFullYear();
+                            const m = now.getMonth() - birthDate.getMonth();
+                            const isAtLeast18 = age > 18 || (age === 18 && m >= 0 && now.getDate() >= birthDate.getDate());
+                            isValid = isAtLeast18 && birthDate.getFullYear() > 1900;
+                        } else {
+                            isValid = false;
+                        }
                     } else if (field.name === 'Zip' || field.name === 'routingNumber') {
                         isValid = /^\d+$/.test(field.value) && field.value.length === Number(field.getAttribute('maxlength'));
                     }
@@ -1085,7 +1096,11 @@
             const showStep = (targetStep) => {
                 currentStep = Math.max(0, Math.min(targetStep, sections.length - 1));
                 sections.forEach((section, idx) => {
-                    section.classList.toggle('pt-step-hidden', idx !== currentStep);
+                    if (formStyle === 'single-step') {
+                        section.classList.remove('pt-step-hidden');
+                    } else {
+                        section.classList.toggle('pt-step-hidden', idx !== currentStep);
+                    }
                 });
                 const currentLabelEl = sections[currentStep].querySelector('.pt-section-label');
                 const currentLabel = currentLabelEl ? currentLabelEl.textContent.trim() : `Step ${currentStep + 1}`;
@@ -1239,7 +1254,7 @@
             form.onsubmit = async (e) => {
                 e.preventDefault();
 
-                if (currentStep < sections.length - 1) {
+                if (formStyle !== 'single-step' && currentStep < sections.length - 1) {
                     const isCurrentStepValid = validateStep(currentStep);
                     if (!isCurrentStepValid) {
                         const firstError = sections[currentStep].querySelector('.is-invalid');
@@ -1274,7 +1289,10 @@
 
                 const formData = new FormData(form);
                 const data = Object.fromEntries(formData.entries());
-                data.dob = `${data.dob_yyyy}-${data.dob_mm}-${data.dob_dd}`;
+
+                if (data.Date_Of_Birth) {
+                    data.dob = data.Date_Of_Birth;
+                }
 
                 // Add Tracking Metadata
                 if (options.formId) data.form_id = options.formId;
@@ -1348,6 +1366,7 @@
             const formId = currentScript.getAttribute('data-form-id');
             const containerId = currentScript.getAttribute('data-container-id');
             const primaryColor = currentScript.getAttribute('data-primary-color');
+            const formStyle = currentScript.getAttribute('data-style');
 
             if (apiKey && containerId) {
                 console.log("PingTree: Auto-initializing script...");
@@ -1356,7 +1375,8 @@
                 if (formId) {
                     PingTree.render(containerId, {
                         formId,
-                        primaryColor: primaryColor || undefined
+                        primaryColor: primaryColor || undefined,
+                        style: formStyle || undefined
                     });
                 }
             }

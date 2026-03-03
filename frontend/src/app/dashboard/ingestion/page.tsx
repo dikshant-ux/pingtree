@@ -26,6 +26,7 @@ interface LeadForm {
     name: string;
     title: string;
     primary_color: string;
+    style: string;
     allowed_domains: string[];
     is_active: boolean;
     reject_redirect_url?: string;
@@ -46,6 +47,7 @@ export default function IngestionPage() {
         name: '',
         title: '',
         primary_color: '#28a745',
+        style: 'multi-step',
         reject_redirect_url: '',
         click_id_configs: [] as { key: string; method: string; param_name?: string; script_url?: string; }[]
     });
@@ -105,6 +107,7 @@ export default function IngestionPage() {
                 name: '',
                 title: '',
                 primary_color: '#28a745',
+                style: 'multi-step',
                 reject_redirect_url: '',
                 click_id_configs: []
             });
@@ -169,22 +172,14 @@ export default function IngestionPage() {
         toast.success(`${label} copied to clipboard`);
     };
 
-    // Embed Snippets
-    const getEmbedCode = (formId?: string) => `<script src="${baseUrl}/static/pingtree.js"></script>
-<script>
-    (async () => {
-        await PingTree.init("${apiKey || 'YOUR_API_KEY'}", { 
-            formId: "${formId || 'optional_form_id'}" 
-        });
-    })();
-</script>`;
+    // Embed Snippets (Next.js format as requested)
+    const getEmbedCode = (form: LeadForm) => `<Script
+    src="${baseUrl}/static/pingtree.js"
+    data-api-key="${apiKey || 'YOUR_API_KEY'}"
+    data-form-id="${form._id}"
+    data-container-id="pt-lead-form"
+/>`;
 
-    const getRenderCode = (form: LeadForm) => `PingTree.render("pt-lead-form", {
-    formId: "${form._id}",
-    title: "${form.title}",
-    primaryColor: "${form.primary_color}",
-    onSuccess: (data) => console.log("Success!", data)
-});`;
 
     useEffect(() => {
         if (selectedForm && isScriptLoaded && (window as any).PingTree && apiKey) {
@@ -196,6 +191,7 @@ export default function IngestionPage() {
                 setTimeout(() => {
                     (window as any).PingTree.render('preview-container', {
                         formId: selectedForm._id,
+                        style: selectedForm.style,
                         title: selectedForm.title,
                         primaryColor: selectedForm.primary_color,
                         onSuccess: (res: any) => toast.success("Preview Submission Successful!")
@@ -287,11 +283,8 @@ export default function IngestionPage() {
                                             </div>
                                         </div>
                                         <div className="flex gap-2">
-                                            <Button variant="outline" size="sm" onClick={() => copyToClipboard(getEmbedCode(), "Main script tag")}>
-                                                <Copy className="h-3 w-3 mr-2" /> Script
-                                            </Button>
-                                            <Button className="bg-indigo-600 hover:bg-indigo-700" size="sm" onClick={() => copyToClipboard(getRenderCode(selectedForm), "Render code")}>
-                                                <Copy className="h-3 w-3 mr-2" /> Render Code
+                                            <Button className="bg-indigo-600 hover:bg-indigo-700" size="sm" onClick={() => copyToClipboard(getEmbedCode(selectedForm), "Embed Script")}>
+                                                <Copy className="h-3 w-3 mr-2" /> Copy Embed Script
                                             </Button>
                                         </div>
                                     </div>
@@ -299,7 +292,7 @@ export default function IngestionPage() {
                                 <CardContent>
                                     <div className="relative group">
                                         <pre className="p-4 rounded-lg bg-slate-950 text-slate-50 font-mono text-xs overflow-x-auto border border-slate-800">
-                                            {getRenderCode(selectedForm)}
+                                            {getEmbedCode(selectedForm)}
                                         </pre>
                                     </div>
                                 </CardContent>
@@ -429,6 +422,17 @@ export default function IngestionPage() {
                                     onChange={(e) => setNewForm({ ...newForm, primary_color: e.target.value })}
                                 />
                             </div>
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">Form Style</label>
+                            <select
+                                className="w-full h-10 bg-background border border-input rounded-md px-3 text-sm"
+                                value={newForm.style}
+                                onChange={(e) => setNewForm({ ...newForm, style: e.target.value })}
+                            >
+                                <option value="multi-step">Multi-Step Form</option>
+                                <option value="single-step">Single-Step (All fields at once)</option>
+                            </select>
                         </div>
                         <div className="space-y-2">
                             <label className="text-sm font-medium text-destructive">Reject Redirection URL (Optional)</label>
@@ -603,6 +607,17 @@ export default function IngestionPage() {
                                         onChange={(e) => setEditingForm({ ...editingForm, primary_color: e.target.value })}
                                     />
                                 </div>
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium">Form Style</label>
+                                <select
+                                    className="w-full h-10 bg-background border border-input rounded-md px-3 text-sm"
+                                    value={editingForm.style}
+                                    onChange={(e) => setEditingForm({ ...editingForm, style: e.target.value })}
+                                >
+                                    <option value="multi-step">Multi-Step Form</option>
+                                    <option value="single-step">Single-Step (All fields at once)</option>
+                                </select>
                             </div>
                             <div className="space-y-2">
                                 <label className="text-sm font-medium text-destructive">Reject Redirection URL (Optional)</label>
