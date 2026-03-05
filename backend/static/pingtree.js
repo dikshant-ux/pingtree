@@ -15,6 +15,95 @@
         { val: "Wisconsin", label: "Wisconsin" }, { val: "Wyoming", label: "Wyoming" }
     ];
 
+    const BANK_DATA = {
+        'Bancorp': { 'All Locations': '031101114' },
+        'Bank of America': {
+            'Alabama': '051000017', 'Alaska': '051000017', 'Arizona': '122101706', 'Arkansas': '082000073', 'California': '121000358',
+            'Colorado': '123103716', 'Connecticut': '011900571', 'Delaware': '031202084', 'District of Columbia': '054001204', 'Florida East': '063000047',
+            'Florida West': '063100277', 'Georgia': '061000052', 'Hawaii': '051000017', 'Idaho': '123103716', 'Illinois': '081904808',
+            'Indiana': '071214579', 'Iowa': '073000176', 'Kansas': '101100045', 'Kentucky': '051000017', 'Louisiana': '051000017',
+            'Maine': '011200365', 'Maryland': '052001633', 'Massachusetts': '011000138', 'Michigan': '051000017', 'Minnesota': '071214579',
+            'Mississippi': '051000017', 'Missouri East': '081000032', 'Missouri West': '101000035', 'Montana': '051000017', 'Nebraska': '051000017',
+            'Nevada': '122400724', 'New Hampshire': '011400495', 'New Jersey': '021200339', 'New Mexico': '107000327', 'New York': '021000322',
+            'North Carolina': '053000196', 'North Dakota': '051000017', 'Ohio': '051000017', 'Oklahoma': '103000017', 'Oregon': '323070380',
+            'Pennsylvania': '031202084', 'Rhode Island': '011500010', 'South Carolina': '053904483', 'South Dakota': '051000017', 'Tennessee': '064000020',
+            'Texas, North': '111000025', 'Texas, South': '113000023', 'Utah': '051000017', 'Vermont': '051000017', 'Virginia': '051000017',
+            'Washington': '125000024', 'West Virginia': '051000017', 'Wisconsin': '051000017', 'Wyoming': '051000017'
+        },
+        'Branch Bank': {
+            'Alabama': '062203984', 'District of Columbia': '054001547', 'Florida': '263191387', 'Georgia': '061113415', 'Indiana': '083974289',
+            'Kentucky': '083900680', 'Maryland': '055003308', 'North Carolina': '053101121', 'South Carolina': '053201607', 'Tennessee': '064208165',
+            'Texas': '111017694', 'Virginia': '051404260', 'West Virginia': '051503394'
+        },
+        'Bonneville Bank': { 'All Locations': '124302529' },
+        'Chase Bank': {
+            'Arizona': '122100024', 'California': '322271627', 'Colorado': '102001017', 'Connecticut': '021100361', 'Florida': '267084131',
+            'Georgia': '061092387', 'Idaho': '123271978', 'Illinois': '071000013', 'Indiana': '074000010', 'Kentucky': '083000137',
+            'Louisiana': '065400137', 'Michigan': '072000326', 'Nevada': '322271627', 'New Jersey': '021202337', 'New York – Downstate': '021000021',
+            'New York – Upstate': '022300173', 'Ohio': '044000037', 'Oklahoma': '103000648', 'Oregon': '325070760', 'Texas': '111000614',
+            'Utah': '124001545', 'Washington': '325070760', 'West Virginia': '051900366', 'Wisconsin': '075000019'
+        },
+        'Fifth Third Bank': {
+            'Florida - Central': '063109935', 'Florida - North': '063113057', 'Florida - South': '067091719', 'Florida - Tampa': '063103915',
+            'Georgia': '263190812', 'Illinois': '071923909', 'Indiana - Central': '074908594', 'Indiana - Southern': '086300041',
+            'Kentucky - Central': '042101190', 'Kentucky - Northern': '042100230', 'Kentucky - Southwestern': '083002342', 'Michigan - Eastern': '072405455',
+            'Michigan - Northern': '072401404', 'Michigan - Western': '072400052', 'Missouri': '081019104', 'North Carolina': '053100737',
+            'Ohio - Cincinnati': '042000314', 'Ohio - Columbus': '044002161', 'Ohio - Northeastern': '041002711', 'Ohio - Northwestern': '041200050',
+            'Ohio - Southern': '042207735', 'Ohio - Western': '042202196', 'Pennsylvania': '043018868', 'Tennessee': '064103833'
+        },
+        'First California Bank': { 'All Locations': '122244184' },
+        'First National Bank Texas': { 'Arizona': '122106455', 'New Mexico': '122106455', 'Texas': '111906271' },
+        'M&T Bank': {
+            'Delaware': '031302955', 'District of Columbia': '052000113', 'Maryland': '052000113', 'New York': '022000046',
+            'Pennsylvania': '031302955', 'Virginia': '052000113', 'West Virginia': '052000113'
+        },
+        'MetaBank': { 'MetaBank': '073972181', 'MetaBank Memphis': '084003997', 'Brookins Division - MetaBank': '291471024' },
+        'Navy Federal Credit Union': { 'All Locations': '256074974' },
+        'PNC Bank': {
+            'Delaware': '031100089', 'Florida': '267084199', 'Greater Washington Area': '054000030', 'Illinois': '071921891', 'Indiana': '074909564',
+            'Kentucky': '083000108', 'Kentucky - Northern': '083000108', 'New Jersey': '031207607', 'Michigan': '041215537', 'Missouri': '081000210',
+            'Ohio': '042000398', 'Ohio Alternate': '042000398', 'Ohio - Youngstown': '043300738', 'Pennsylvania - Central, North': '031000053',
+            'Pennsylvania - Central, South': '031000053', 'Pennsylvania - Northeast': '031300012', 'Pennsylvania - Northwest': '031300012',
+            'Pennsylvania - Philadelphia': '031000053', 'Pennsylvania - Pittsburgh': '043300738', 'Wisconsin': '071921891'
+        },
+        'Regions Bank': {
+            'Alabama': '062005690', 'Arkansas': '082000109', 'Florida': '063104668', 'Georgia': '061101375', 'Illinois': '071122661',
+            'Indiana': '074014213', 'Iowa': '073902766', 'Kentucky': '083901744', 'Louisiana': '065303360', 'Mississippi': '065303360',
+            'Missouri': '081003476', 'North Carolina': '053012029', 'South Carolina': '053012029', 'Tennessee': '064000017', 'Texas': '111900659', 'Virginia': '051009296'
+        },
+        'SunTrust Bank': { 'All Locations': '061000104' },
+        'TD Bank': {
+            'Connecticut': '011103093', 'Delaware': '031201360', 'District of Columbia': '054001204', 'Florida': '067014822', 'Maine': '011200365',
+            'Maryland': '054001204', 'Massachusetts': '011400071', 'New Hampshire': '011400495', 'New Jersey': '031201360', 'New York - Metro': '021410928',
+            'New York - Upstate': '021302567', 'North Carolina': '053902197', 'Pennsylvania': '036001808', 'Rhode Island': '011500010',
+            'South Carolina': '053902197', 'Vermont': '011600033', 'Virginia': '054001204'
+        },
+        'USAA Federal Savings Bank': { 'All Locations': '314074269' },
+        'US Bank': {
+            'Arizona': '122235821', 'Arkansas': '082000549', 'California - Northern': '121122676', 'California - Southern': '122235821',
+            'Colorado - Aspen': '102000021', 'Colorado - All other areas': '102000021', 'Idaho': '123103716', 'Illinois - Northern': '071004200',
+            'Illinois - Southern': '071004200', 'Indiana': '074900783', 'Iowa - Council Bluffs': '104000016', 'Iowa - All other areas': '104000016',
+            'Kansas': '101000019', 'Kentucky - Northern': '083900363', 'Kentucky - Western': '083900363', 'Minnesota - East Grand Forks': '091000022',
+            'Minnesota - Moorhead': '091000022', 'Minnesota - All other areas': '091000022', 'Missouri': '081000210', 'Montana': '092905249',
+            'Nebraska': '104000016', 'Nevada': '122400724', 'New Mexico': '107000327', 'North Dakota': '091300023', 'Ohio - Cleveland': '041000124',
+            'Ohio - All other areas': '041000124', 'Oregon': '123000220', 'South Dakota': '091300023', 'Tennessee': '064000017', 'Utah': '124085066',
+            'Washington': '125000024', 'Wisconsin': '075900575', 'Wyoming': '102000021', 'All other states': '091000022'
+        },
+        'Wells Fargo': {
+            'Alabama': '062000080', 'Alaska': '125000024', 'Arizona': '122105278', 'Arkansas': '082000073', 'California': '121000248',
+            'Colorado': '102000076', 'Connecticut': '011400071', 'Delaware': '031100351', 'District of Columbia': '054001204', 'Florida': '063107513',
+            'Georgia': '061000227', 'Hawaii': '121301025', 'Idaho': '123103716', 'Illinois': '071101307', 'Indiana': '074900275',
+            'Iowa': '073902766', 'Kansas': '101000019', 'Kentucky': '083900363', 'Louisiana': '065000090', 'Maine': '011200365',
+            'Maryland': '054001204', 'Massachusetts': '011400071', 'Michigan': '072403004', 'Minnesota': '091000022', 'Mississippi': '065000090',
+            'Missouri': '081000032', 'Montana': '092905249', 'Nebraska': '104000016', 'Nevada': '122400724', 'New Hampshire': '011400495',
+            'New Jersey': '021200339', 'New Mexico': '107000327', 'New York': '026005092', 'North Carolina': '053000196', 'North Dakota': '091300023',
+            'Ohio': '041000124', 'Oklahoma': '103000017', 'Oregon': '123000220', 'Pennsylvania': '031000503', 'Rhode Island': '011500010',
+            'South Carolina': '053000196', 'South Dakota': '091300023', 'Tennessee': '064000020', 'Texas': '111900659', 'Texas - El Paso': '112000066',
+            'Utah': '124085066', 'Vermont': '011600033', 'Virginia': '051000017', 'Washington': '125000024', 'West Virginia': '051000017',
+            'Wisconsin': '075900575', 'Wyoming': '102000021'
+        }
+    };
+
     var PingTree = {
         config: {
             apiKey: null,
@@ -1239,15 +1328,64 @@
             showStep(0);
 
             if (bankNameField && bankStateField && routingField) {
+                const updateBankStateOptions = (bankName) => {
+                    const bankInfo = BANK_DATA[bankName];
+                    let optionsHtml = '<option value="" disabled selected>Please select</option>';
+
+                    if (!bankName || !bankInfo || bankInfo['All Locations']) {
+                        // Show all states if no bank selected, not in database, or bank is "All Locations"
+                        optionsHtml += STATES.map(s => `<option value="${s.val}">${s.label}</option>`).join('');
+                    } else {
+                        // Show only specific states/regions for this bank
+                        Object.keys(bankInfo).forEach(key => {
+                            optionsHtml += `<option value="${key}">${key}</option>`;
+                        });
+                    }
+                    bankStateField.innerHTML = optionsHtml;
+                    bankStateField.disabled = !bankName;
+                };
+
+                const populateFromLocal = () => {
+                    const bankName = bankNameField.value;
+                    const bankState = bankStateField.value;
+                    if (!bankName) return false;
+
+                    const bankInfo = BANK_DATA[bankName];
+                    if (!bankInfo) return false;
+
+                    let routing = null;
+                    if (bankInfo['All Locations']) {
+                        routing = bankInfo['All Locations'];
+                    } else if (bankState && bankInfo[bankState]) {
+                        routing = bankInfo[bankState];
+                    }
+
+                    if (routing) {
+                        routingField.value = routing;
+                        routingField.classList.remove('is-invalid');
+                        const routingGroup = routingField.closest('.pt-group');
+                        if (routingGroup) routingGroup.classList.remove('has-error');
+                        return true;
+                    } else {
+                        routingField.value = "";
+                    }
+                    return false;
+                };
+
                 bankNameField.addEventListener('change', async () => {
                     const bankName = bankNameField.value;
 
-                    bankStateField.value = "";
+                    // Update states first
+                    updateBankStateOptions(bankName);
                     routingField.value = "";
-                    bankStateField.disabled = !bankName;
 
                     if (!bankName) return;
 
+                    // 1. Try Local Lookup First
+                    const foundLocal = populateFromLocal();
+                    if (foundLocal) return;
+
+                    // 2. Fallback to API Lookup
                     const details = await this.fetchBankDetails(bankName);
                     if (!details) return;
 
@@ -1263,6 +1401,10 @@
                         const routingGroup = routingField.closest('.pt-group');
                         if (routingGroup) routingGroup.classList.remove('has-error');
                     }
+                });
+
+                bankStateField.addEventListener('change', () => {
+                    populateFromLocal();
                 });
             }
 
