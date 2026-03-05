@@ -74,7 +74,8 @@ export function transformBackendToWizard(buyer: Buyer): WizardBuyerConfig {
             company: "", // Not in backend yet
             vertical: "Home Services",
             environment: "live", // Default
-            status: buyer.status as any
+            status: buyer.status as any,
+            timeout_ms: buyer.timeout_ms || 1000
         },
         integration_type: (buyer.type === 'redirect' ? 'full_post' : buyer.type) as any,
         endpoints: {

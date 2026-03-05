@@ -71,6 +71,18 @@ export default function Step1_BasicInfo({ data, updateData }: Step1Props) {
                             </select>
                         </div>
                     </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label>Response Timeout (ms)</Label>
+                            <Input
+                                type="number"
+                                value={data.buyer.timeout_ms}
+                                onChange={(e) => handleChange("timeout_ms", parseInt(e.target.value) || 0)}
+                                placeholder="1000"
+                            />
+                        </div>
+                    </div>
                 </CardContent>
             </Card>
 

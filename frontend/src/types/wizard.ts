@@ -11,6 +11,7 @@ export interface WizardBuyerBasic {
     vertical: string;
     environment: Environment;
     status: BuyerStatus;
+    timeout_ms: number;
 }
 
 export interface EndpointConfig {
@@ -96,7 +97,8 @@ export const INITIAL_WIZARD_STATE: WizardBuyerConfig = {
         company: "",
         vertical: "Home Services",
         environment: "test",
-        status: "active"
+        status: "active",
+        timeout_ms: 1000
     },
     integration_type: "ping_post",
     endpoints: {

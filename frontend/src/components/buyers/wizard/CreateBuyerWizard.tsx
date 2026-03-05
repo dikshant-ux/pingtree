@@ -97,6 +97,7 @@ export default function CreateBuyerWizard({ initialData, isEditing = false }: Cr
             post_url: postUrl,
             headers: headers,
             status: config.buyer.status,
+            timeout_ms: config.buyer.timeout_ms || 1000,
             filters: {
                 filter_root: config.filter_root
             },
