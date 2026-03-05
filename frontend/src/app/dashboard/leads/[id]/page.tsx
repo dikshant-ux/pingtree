@@ -98,6 +98,20 @@ export default function LeadDetailsPage({ params }: { params: Promise<{ id: stri
                             </div>
                         </CardContent>
                     </Card>
+
+                    {lead.validation_results && lead.validation_results.length > 0 && (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Validation Results</CardTitle>
+                                <CardDescription>Full response from external validators.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <pre className="bg-slate-900 text-slate-100 p-4 rounded-lg text-[10px] font-mono overflow-auto max-h-[400px]">
+                                    {JSON.stringify(lead.validation_results, null, 2)}
+                                </pre>
+                            </CardContent>
+                        </Card>
+                    )}
                 </div>
 
                 {/* Right Column: Timeline */}

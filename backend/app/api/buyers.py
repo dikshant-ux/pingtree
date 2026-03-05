@@ -57,6 +57,21 @@ async def delete_buyer(buyer_id: str):
     await buyer.delete()
     return {"message": "Buyer deleted"}
 
+@router.post("/{buyer_id}/clone", response_model=Buyer)
+async def clone_buyer(buyer_id: str):
+    existing_buyer = await Buyer.get(buyer_id)
+    if not existing_buyer:
+        raise HTTPException(status_code=404, detail="Buyer not found")
+    
+    # Create a copy by excluding the ID and other system fields
+    buyer_dict = existing_buyer.dict(exclude={"id", "created_at", "updated_at", "performance_metrics"})
+    buyer_dict["name"] = f"{buyer_dict['name']} (Copy)"
+    buyer_dict["status"] = BuyerStatus.INACTIVE # Set copy to inactive by default
+    
+    new_buyer = Buyer(**buyer_dict)
+    await new_buyer.create()
+    return new_buyer
+
 # --- Test Console Logic ---
 
 @router.post("/test")

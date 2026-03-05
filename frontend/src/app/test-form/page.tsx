@@ -50,9 +50,9 @@ export default function TestFormPage() {
 
 
             <Script
-                src="https://pingtree.vellko.com/static/pingtree.js"
-                data-api-key="54745478b50a804f3152c4bf9c84cd578c815ed472f6f03577f8896b99743ecf"
-                data-form-id="69a53f1c6637aa56d4836325"
+                src="http://localhost:8000/static/pingtree.js"
+                data-api-key="5d68c65b1e50d8bf29b29778b4220ac8e367bc6073c5d576838cbd6307d36f37"
+                data-form-id="69a132e1f9305dec70e559b9"
                 data-container-id="pt-lead-form"
             />
         </div>

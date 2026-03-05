@@ -98,12 +98,12 @@ export default function CreateBuyerWizard({ initialData, isEditing = false }: Cr
             headers: headers,
             status: config.buyer.status,
             filters: {
-                states: config.filters.filter(f => f.field.toLowerCase() === 'state' && f.operator === 'IN').map(f => f.value), // Simple mapping for now
-                zip_codes: config.filters.filter(f => f.field === 'zip').map(f => f.value)
+                filter_root: config.filter_root
             },
             caps: {
                 daily_cap: config.caps.daily || 0,
-                hourly_cap: config.caps.hourly || 0
+                hourly_cap: config.caps.hourly || 0,
+                throttle_per_minute: config.caps.per_minute || 0
             },
             field_mapping: config.field_mapping.map(mapField), // Shared/Legacy
             ping_mapping: config.field_mapping.filter(m => m.send_in_ping).map(mapField),

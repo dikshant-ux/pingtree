@@ -70,6 +70,7 @@ async def public_ingest_lead(
              lead_data["Phone"] = "+1" + digits
 
     metadata = {
+        "user_id": str(user.id),
         "form_id": lead_data.pop("form_id", None),
         "source_url": referer,
         "source_domain": referer.split('/')[2] if referer and '//' in referer else None,
@@ -82,13 +83,25 @@ async def public_ingest_lead(
     # Helper for unified response and redirection
     async def generate_response(status: str, lead_id: Optional[str] = None, processed_at: Optional[datetime] = None, redirect_url: Optional[str] = None, reason: Optional[str] = None):
         final_redirect = redirect_url
-        if status != "sold" and metadata.get("form_id"):
-            try:
-                form = await LeadForm.get(metadata["form_id"])
-                if form and form.reject_redirect_url:
-                    final_redirect = form.reject_redirect_url
-            except:
-                pass
+        if status != "sold":
+            # 1. Check form-specific override
+            if metadata.get("form_id"):
+                try:
+                    form = await LeadForm.get(metadata["form_id"])
+                    if form and form.reject_redirect_url:
+                        final_redirect = form.reject_redirect_url
+                except:
+                    pass
+            
+            # 2. Fallback to automatic construction: source domain + /thank-you
+            if not final_redirect and metadata.get("source_url"):
+                try:
+                    from urllib.parse import urlparse
+                    parsed = urlparse(metadata["source_url"])
+                    if parsed.scheme and parsed.netloc:
+                        final_redirect = f"{parsed.scheme}://{parsed.netloc}/thank-you"
+                except:
+                    pass
         
         return {
             "status": status,
@@ -102,22 +115,38 @@ async def public_ingest_lead(
     from app.models.validation import LeadValidationConfig
     from app.services.validator_service import validator_service
     
-    validation_config = await LeadValidationConfig.find_one(
+    validation_configs = await LeadValidationConfig.find(
         LeadValidationConfig.user_id == str(user.id),
         LeadValidationConfig.is_active == True
-    )
+    ).to_list()
     
-    if validation_config:
-        is_valid = await validator_service.validate_lead(validation_config, lead_data, metadata=metadata)
+    validation_results = []
+    any_invalid = False
+    
+    for config in validation_configs:
+        is_valid, resp_body = await validator_service.validate_lead(config, lead_data, metadata=metadata)
+        
+        validation_results.append({
+            "validator_name": config.name,
+            "success": is_valid,
+            "response_body": resp_body,
+            "timestamp": datetime.utcnow().isoformat()
+        })
+        
         if not is_valid:
+            any_invalid = True
             trace.append({
                 "timestamp": datetime.utcnow().isoformat(),
                 "stage": "Validation",
                 "status": "Rejected",
-                "details": "External validation failed"
+                "details": f"Validation failed for {config.name}"
             })
-            lead = await auction_engine.create_lead(lead_data, LeadStatus.INVALID, trace, start_time, metadata)
-            return await generate_response(status="Invalid Lead", lead_id=str(lead.id), reason="Validation Failed")
+
+    metadata["validation_results"] = validation_results
+
+    if any_invalid:
+        lead = await auction_engine.create_lead(lead_data, LeadStatus.INVALID, trace, start_time, metadata)
+        return await generate_response(status="Invalid Lead", lead_id=str(lead.id), reason="Validation Failed")
 
     # Execute Auction
     result = await auction_engine.run_auction(lead_data, metadata=metadata)

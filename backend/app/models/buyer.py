@@ -14,17 +14,37 @@ class BuyerStatus(str, Enum):
     INACTIVE = "inactive"
     PAUSED = "paused"
 
+class FilterNode(BaseModel):
+    type: str = "rule" # "rule" or "group"
+    # Rule fields
+    field: Optional[str] = None
+    operator: Optional[str] = None
+    value: Optional[Any] = None
+    # Group fields
+    conjunction: Optional[str] = "AND" # "AND" or "OR"
+    children: Optional[List["FilterNode"]] = []
+
+FilterNode.update_forward_refs()
+
+class FilterRule(BaseModel):
+    field: str
+    operator: str
+    value: Any
+
 class FilterConfig(BaseModel):
     states: Optional[List[str]] = []
     zip_codes: Optional[List[str]] = []
     min_age: Optional[int] = None
     max_age: Optional[int] = None
+    rules: Optional[List[FilterRule]] = [] # Legacy / Flat support
+    filter_root: Optional[FilterNode] = None # New Recursive Root
     custom_conditions: Optional[Dict[str, Any]] = {}
 
 class CapConfig(BaseModel):
     daily_cap: int = 0
     hourly_cap: int = 0
     total_cap: int = 0
+    throttle_per_minute: int = 0
 
 class FieldMapping(BaseModel):
     internal_field: str

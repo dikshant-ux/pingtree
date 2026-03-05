@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import api from '@/lib/api';
 import { Buyer } from '@/types';
-import { Trash2, Pencil } from 'lucide-react';
+import { Trash2, Pencil, Copy } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function BuyersPage() {
     const [buyers, setBuyers] = useState<Buyer[]>([]);
@@ -29,8 +30,10 @@ export default function BuyersPage() {
         const newStatus = currentStatus === 'active' ? 'paused' : 'active';
         try {
             await api.put(`/buyers/${id}`, { status: newStatus });
+            toast.success(`Buyer status updated to ${newStatus}`);
             fetchBuyers(); // Refresh
         } catch (err) {
+            toast.error('Failed to update status');
             console.error('Failed to update status', err);
         }
     };
@@ -39,9 +42,23 @@ export default function BuyersPage() {
         if (!confirm('Are you sure you want to delete this buyer?')) return;
         try {
             await api.delete(`/buyers/${id}`);
+            toast.success('Buyer deleted successfully');
             fetchBuyers();
         } catch (err) {
+            toast.error('Failed to delete buyer');
             console.error('Failed to delete buyer', err);
+        }
+    };
+
+    const cloneBuyer = async (id: string) => {
+        const loadingToast = toast.loading('Cloning buyer...');
+        try {
+            await api.post(`/buyers/${id}/clone`);
+            toast.success('Buyer cloned successfully', { id: loadingToast });
+            fetchBuyers(); // Refresh list to show copy
+        } catch (err) {
+            toast.error('Failed to clone buyer', { id: loadingToast });
+            console.error('Failed to clone buyer', err);
         }
     };
 
@@ -103,6 +120,13 @@ export default function BuyersPage() {
                                 </td>
                                 <td className="px-6 py-4 text-right">
                                     <div className="flex items-center justify-end space-x-2">
+                                        <button
+                                            onClick={() => cloneBuyer(buyer._id)}
+                                            className="p-2 text-muted-foreground hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
+                                            title="Clone Buyer"
+                                        >
+                                            <Copy className="w-4 h-4" />
+                                        </button>
                                         <Link
                                             href={`/dashboard/buyers/${buyer._id}`}
                                             className="p-2 text-muted-foreground hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition-colors"

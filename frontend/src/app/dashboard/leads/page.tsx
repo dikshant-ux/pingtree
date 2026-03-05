@@ -26,6 +26,7 @@ interface Lead {
     source_domain?: string;
     form_id?: string;
     trusted_form_url?: string;
+    validation_results?: any[];
 }
 
 export default function LeadsPage() {
@@ -73,6 +74,7 @@ export default function LeadsPage() {
                                 <TableHead>Status</TableHead>
                                 <TableHead>Price</TableHead>
                                 <TableHead>Latency</TableHead>
+                                <TableHead>Validation</TableHead>
                                 <TableHead>Source</TableHead>
                                 <TableHead>Date</TableHead>
                                 <TableHead>Action</TableHead>
@@ -102,6 +104,23 @@ export default function LeadsPage() {
                                         </TableCell>
                                         <TableCell className="text-muted-foreground">
                                             {lead.latency_ms}ms
+                                        </TableCell>
+                                        <TableCell>
+                                            {lead.validation_results && lead.validation_results.length > 0 ? (
+                                                <div className="flex flex-wrap gap-1">
+                                                    {lead.validation_results.map((res: any, idx: number) => (
+                                                        <Badge
+                                                            key={idx}
+                                                            variant={res.success ? "outline" : "destructive"}
+                                                            className={res.success ? "text-[10px] border-green-200 text-green-700 bg-green-50" : "text-[10px]"}
+                                                        >
+                                                            {res.validator_name}: {res.success ? 'Valid' : 'Invalid'}
+                                                        </Badge>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <span className="text-xs text-muted-foreground italic">None</span>
+                                            )}
                                         </TableCell>
                                         <TableCell>
                                             <div className="flex flex-col gap-1">

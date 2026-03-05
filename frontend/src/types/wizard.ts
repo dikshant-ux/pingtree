@@ -67,6 +67,17 @@ export interface WizardCaps {
     per_minute?: number;
 }
 
+export interface WizardFilterNode {
+    type: 'rule' | 'group';
+    // Rule fields
+    field?: string;
+    operator?: '=' | '!=' | 'IN' | 'NOT IN' | 'STARTS_WITH';
+    value?: string;
+    // Group fields
+    conjunction?: 'AND' | 'OR';
+    children?: WizardFilterNode[];
+}
+
 export interface WizardBuyerConfig {
     buyer: WizardBuyerBasic;
     integration_type: IntegrationType;
@@ -75,6 +86,7 @@ export interface WizardBuyerConfig {
     response_parser: WizardResponseParser;
     context_extraction: { response_field: string; context_key: string }[];
     filters: WizardFilterRule[];
+    filter_root?: WizardFilterNode;
     caps: WizardCaps;
 }
 
@@ -98,5 +110,10 @@ export const INITIAL_WIZARD_STATE: WizardBuyerConfig = {
     },
     context_extraction: [],
     filters: [],
+    filter_root: {
+        type: 'group',
+        conjunction: 'AND',
+        children: []
+    },
     caps: { daily: 0, hourly: 0 }
 };

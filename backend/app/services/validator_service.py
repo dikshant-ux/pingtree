@@ -11,13 +11,13 @@ class ValidatorService:
         config: LeadValidationConfig, 
         lead_data: Dict[str, Any],
         metadata: Optional[Dict[str, Any]] = None
-    ) -> bool:
+    ) -> Tuple[bool, Dict[str, Any]]:
         """
         Executes external validation for a lead.
-        Returns True if valid, False otherwise.
+        Returns (is_valid, response_body).
         """
         if not config.is_active:
-            return True
+            return True, {"status": "inactive", "message": "Validator is disabled"}
 
         # 1. Prepare parameters
         params = config.static_params.copy()
@@ -47,28 +47,31 @@ class ValidatorService:
                 logger.info(f"Validator Request URL: {response.url}")
                 logger.info(f"Validator Response ({response.status_code}): {response.text}")
 
+                resp_text = response.text
+                try:
+                    result = response.json()
+                except:
+                    result = {"raw": resp_text}
+
                 if response.status_code != 200:
                     logger.error(f"Validator API returned status {response.status_code}: {response.text}")
                     # In case of API error, we might decide to fail-safe (accept) or fail-secure (reject)
                     # For now, let's accept to avoid blocking business if the validator is down
-                    return True
+                    return True, {"error": f"API returned {response.status_code}", "body": result}
 
-                result = response.json()
                 
                 # 3. Evaluate Success Criteria
                 # We expect response to be a dict. Check the field value.
                 actual_value = result.get(config.success_criteria_field)
                 
                 # Handle case-insensitive comparison for "valid"
-                if str(actual_value).lower() == str(config.success_criteria_value).lower():
-                    return True
+                is_valid = str(actual_value).lower() == str(config.success_criteria_value).lower()
                 
-                logger.info(f"Lead rejected by validator. Expected {config.success_criteria_field}={config.success_criteria_value}, got {actual_value}")
-                return False
+                return is_valid, result
 
         except Exception as e:
             logger.error(f"Error during lead validation: {str(e)}")
             # Fail-safe: if validator service is down, let the lead through
-            return True
+            return True, {"error": str(e)}
 
 validator_service = ValidatorService()

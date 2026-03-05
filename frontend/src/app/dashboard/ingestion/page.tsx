@@ -9,7 +9,7 @@ import Script from 'next/script';
 import {
     Copy, RefreshCw, Code, Terminal, CheckCircle2,
     Plus, Layers, ExternalLink, Trash2, Edit2,
-    ChevronRight, Globe, MousePointer2
+    ChevronRight, Globe, MousePointer2, ShieldCheck
 } from "lucide-react";
 import api from '@/lib/api';
 import {
@@ -31,6 +31,13 @@ interface LeadForm {
     is_active: boolean;
     reject_redirect_url?: string;
     click_id_configs: { key: string; method: string; param_name?: string; script_url?: string; }[];
+}
+
+interface DomainTokenMapping {
+    _id: string;
+    domain_name: string;
+    api_token: string;
+    is_active: boolean;
 }
 
 export default function IngestionPage() {
@@ -55,6 +62,11 @@ export default function IngestionPage() {
     const [selectedForm, setSelectedForm] = useState<LeadForm | null>(null);
     const [baseUrl, setBaseUrl] = useState<string>('');
 
+    // Domain Token Mappings State
+    const [domainMappings, setDomainMappings] = useState<DomainTokenMapping[]>([]);
+    const [isDomainModalOpen, setIsDomainModalOpen] = useState(false);
+    const [newMapping, setNewMapping] = useState({ domain_name: '', api_token: '' });
+
     useEffect(() => {
         // Correctly derive base URL from the API endpoint to ensure it points to the backend
         const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
@@ -71,7 +83,7 @@ export default function IngestionPage() {
 
     const init = async () => {
         setIsLoading(true);
-        await Promise.all([fetchApiKey(), fetchForms()]);
+        await Promise.all([fetchApiKey(), fetchForms(), fetchDomainMappings()]);
         setIsLoading(false);
     };
 
@@ -94,6 +106,42 @@ export default function IngestionPage() {
             }
         } catch (err) {
             console.error("Failed to fetch forms", err);
+        }
+    };
+
+    const fetchDomainMappings = async () => {
+        try {
+            const res = await api.get('/domain-mappings/');
+            setDomainMappings(res.data);
+        } catch (err) {
+            console.error("Failed to fetch domain mappings", err);
+        }
+    };
+
+    const handleCreateMapping = async () => {
+        if (!newMapping.domain_name || !newMapping.api_token) return;
+        try {
+            const res = await api.post('/domain-mappings/', newMapping);
+            const exists = domainMappings.find(m => m.domain_name === res.data.domain_name);
+            if (exists) {
+                setDomainMappings(domainMappings.map(m => m.domain_name === res.data.domain_name ? res.data : m));
+            } else {
+                setDomainMappings([...domainMappings, res.data]);
+            }
+            setNewMapping({ domain_name: '', api_token: '' });
+            toast.success("Domain Rule Added");
+        } catch (err) {
+            toast.error("Failed to create mapping");
+        }
+    };
+
+    const handleDeleteMapping = async (id: string) => {
+        try {
+            await api.delete(`/domain-mappings/${id}`);
+            setDomainMappings(domainMappings.filter(m => m._id !== id));
+            toast.success("Domain Rule Deleted");
+        } catch (err) {
+            toast.error("Failed to delete mapping");
         }
     };
 
@@ -382,6 +430,74 @@ export default function IngestionPage() {
                 </CardContent>
             </Card>
 
+            {/* Domain Token Mappings Section */}
+            <Card className="border-amber-200">
+                <CardHeader className="bg-amber-50/50 flex flex-row items-center justify-between">
+                    <div>
+                        <CardTitle className="text-sm font-semibold uppercase tracking-wider text-amber-900 flex items-center gap-2">
+                            <ShieldCheck className="h-4 w-4" /> Domain Token Rules
+                        </CardTitle>
+                        <CardDescription className="text-[10px]">Inject specific API tokens based on the lead's source domain.</CardDescription>
+                    </div>
+                    <Button size="sm" variant="outline" className="h-7 text-[10px]" onClick={() => setIsDomainModalOpen(true)}>
+                        <Plus className="h-3 w-3 mr-1" /> Add Rule
+                    </Button>
+                </CardHeader>
+                <CardContent className="py-4">
+                    {domainMappings.length === 0 ? (
+                        <p className="text-xs text-muted-foreground italic text-center py-4">No domain rules configured.</p>
+                    ) : (
+                        <div className="space-y-2">
+                            {domainMappings.map((m) => (
+                                <div key={m._id} className="flex items-center justify-between bg-accent/20 p-2 rounded border border-border">
+                                    <div className="flex gap-4 items-center">
+                                        <div className="text-xs font-medium">{m.domain_name}</div>
+                                        <div className="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-mono">Token: {m.api_token}</div>
+                                    </div>
+                                    <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => handleDeleteMapping(m._id)}>
+                                        <Trash2 className="h-3 w-3" />
+                                    </Button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+
+            {/* Domain Rule Modal */}
+            <Dialog open={isDomainModalOpen} onOpenChange={setIsDomainModalOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Add Domain Token Rule</DialogTitle>
+                        <DialogDescription>
+                            Leads coming from this domain will use the specified API token.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">Source Domain</label>
+                            <Input
+                                placeholder="e.g. cashinsecond.com"
+                                value={newMapping.domain_name}
+                                onChange={(e) => setNewMapping({ ...newMapping, domain_name: e.target.value })}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">Buyer API Token</label>
+                            <Input
+                                placeholder="e.g. 1234"
+                                value={newMapping.api_token}
+                                onChange={(e) => setNewMapping({ ...newMapping, api_token: e.target.value })}
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsDomainModalOpen(false)}>Cancel</Button>
+                        <Button onClick={() => { handleCreateMapping(); setIsDomainModalOpen(false); }} disabled={!newMapping.domain_name || !newMapping.api_token}>Save Rule</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
             {/* Create Form Modal */}
             <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
                 <DialogContent>
@@ -441,7 +557,7 @@ export default function IngestionPage() {
                                 value={newForm.reject_redirect_url}
                                 onChange={(e) => setNewForm({ ...newForm, reject_redirect_url: e.target.value })}
                             />
-                            <p className="text-[10px] text-muted-foreground italic">Users will be redirected here if no buyers buy the lead.</p>
+                            <p className="text-[10px] text-muted-foreground italic">If blank, it defaults to [your-domain]/thank-you based on where the form is used.</p>
                         </div>
 
                         <div className="space-y-3 border-t pt-4">
@@ -626,7 +742,7 @@ export default function IngestionPage() {
                                     value={editingForm.reject_redirect_url || ''}
                                     onChange={(e) => setEditingForm({ ...editingForm, reject_redirect_url: e.target.value })}
                                 />
-                                <p className="text-[10px] text-muted-foreground italic">Users will be redirected here if no buyers buy the lead.</p>
+                                <p className="text-[10px] text-muted-foreground italic">If blank, it defaults to [your-domain]/thank-you based on where the form is used.</p>
                             </div>
 
                             <div className="space-y-3 border-t pt-4">

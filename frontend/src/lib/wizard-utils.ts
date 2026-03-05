@@ -113,13 +113,28 @@ export function transformBackendToWizard(buyer: Buyer): WizardBuyerConfig {
             response_field: ce.response_field,
             context_key: ce.context_key
         })) || [],
-        filters: [
-            ...(buyer.filters.states?.map(s => ({ field: 'state', operator: 'IN', value: s } as any)) || []),
-            ...(buyer.filters.zip_codes?.map(z => ({ field: 'zip', operator: 'IN', value: z } as any)) || [])
-        ],
+        filters: [], // No longer used as primary, but kept for interface compatibility
+        filter_root: buyer.filters.filter_root || (buyer.filters.rules?.length ? {
+            type: 'group',
+            conjunction: 'AND',
+            children: buyer.filters.rules.map(r => ({
+                type: 'rule',
+                field: r.field,
+                operator: r.operator as any,
+                value: r.value
+            }))
+        } : {
+            type: 'group',
+            conjunction: 'AND',
+            children: [
+                ...(buyer.filters.states?.map(s => ({ type: 'rule', field: 'state', operator: 'IN', value: s } as any)) || []),
+                ...(buyer.filters.zip_codes?.map(z => ({ type: 'rule', field: 'zip', operator: 'IN', value: z } as any)) || [])
+            ]
+        }),
         caps: {
             daily: buyer.caps.daily_cap,
-            hourly: buyer.caps.hourly_cap
+            hourly: buyer.caps.hourly_cap,
+            per_minute: buyer.caps.throttle_per_minute || 0
         }
     };
 }

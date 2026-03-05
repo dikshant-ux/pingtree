@@ -2,11 +2,12 @@ import httpx
 import logging
 from typing import Dict, Any, Tuple, Optional
 from app.models.buyer import Buyer, BuyerStatus
+from app.services.domain_service import domain_service
 
 logger = logging.getLogger(__name__)
 
 class BuyerClient:
-    async def ping_buyer(self, buyer: Buyer, lead_data: Dict[str, Any]) -> Tuple[bool, float, Optional[str], str, Dict[str, Any], Optional[Dict]]:
+    async def ping_buyer(self, buyer: Buyer, lead_data: Dict[str, Any], metadata: Dict[str, Any] = {}) -> Tuple[bool, float, Optional[str], str, Dict[str, Any], Optional[Dict]]:
         """
         Returns (Success, Price, Redirect, Reason, Context, RawData)
         Context is data extracted from response (e.g. Lead_ID) to be used in Post.
@@ -14,6 +15,12 @@ class BuyerClient:
         # Feature: Separate Ping Mapping
         mapping = buyer.ping_mapping if buyer.ping_mapping else buyer.field_mapping
         payload = self.transform_payload(lead_data, mapping)
+        
+        # Inject API Token based on Domain Rule
+        if metadata.get("user_id") and metadata.get("source_domain"):
+            token = await domain_service.get_token_for_domain(metadata["user_id"], metadata["source_domain"])
+            if token:
+                payload["api_token"] = token
         
         # Inject Mode
         payload["mode"] = "ping"
@@ -59,7 +66,7 @@ class BuyerClient:
             logger.error(f"Ping error for {buyer.name}: {e}")
             return False, 0.0, None, f"Error: {repr(e)}", {}, None
 
-    async def post_buyer(self, buyer: Buyer, lead_data: Dict[str, Any], context: Dict[str, Any] = {}) -> Tuple[bool, float, Optional[str], str, Optional[Dict]]:
+    async def post_buyer(self, buyer: Buyer, lead_data: Dict[str, Any], context: Dict[str, Any] = {}, metadata: Dict[str, Any] = {}) -> Tuple[bool, float, Optional[str], str, Optional[Dict]]:
         """
         Returns (Success, Price, RedirectURL, Reason, Data)
         """
@@ -70,6 +77,12 @@ class BuyerClient:
         mapping = buyer.post_mapping if buyer.post_mapping else buyer.field_mapping
         
         payload = self.transform_payload(lead_data, mapping)
+        
+        # Inject API Token based on Domain Rule
+        if metadata.get("user_id") and metadata.get("source_domain"):
+            token = await domain_service.get_token_for_domain(metadata["user_id"], metadata["source_domain"])
+            if token:
+                payload["api_token"] = token
         
         # Inject Context directly into payload (bypassing mapping whitelist)
         # This ensures dynamic fields extracted from Ping (e.g. lead_id) are sent.

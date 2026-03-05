@@ -64,9 +64,11 @@ class AuctionEngine:
                 continue
                 
             # Throttle Check
-            if not await redis_client.throttle_check(f"buyer:{buyer.id}:throttle:minute", 60, 60):
-                add_trace("Throttle", "Skipped", str(buyer.id), "Rate limit exceeded")
-                continue
+            throttle_limit = getattr(buyer.caps, "throttle_per_minute", 0)
+            if throttle_limit > 0:
+                if not await redis_client.throttle_check(f"buyer:{buyer.id}:throttle:minute", throttle_limit, 60):
+                    add_trace("Throttle", "Skipped", str(buyer.id), f"Rate limit {throttle_limit}/min exceeded")
+                    continue
                 
             # Add to Tier (default Tier 2 if None)
             tier_id = getattr(buyer, "tier", 2) 
@@ -104,7 +106,7 @@ class AuctionEngine:
                 })
 
             # 2. Parallel Ping for Ping & Post Candidates
-            if ping_tasks := [self.ping_safe(b, lead_data) for b in ping_candidates]:
+            if ping_tasks := [self.ping_safe(b, lead_data, metadata=metadata) for b in ping_candidates]:
                 results = await asyncio.gather(*ping_tasks)
                 for buyer, success, price, redirect, reason, context, raw_data in results:
                     if success:
@@ -137,7 +139,7 @@ class AuctionEngine:
                 final_redirect = bid["redirect"]
                 
                 if (buyer.type == "ping_post" and buyer.post_url) or buyer.type in ["full_post", "redirect"]:
-                    success, post_price, post_redirect, post_reason, post_data = await self.buyer_client.post_buyer(buyer, lead_data, context=context)
+                    success, post_price, post_redirect, post_reason, post_data = await self.buyer_client.post_buyer(buyer, lead_data, context=context, metadata=metadata)
                     if not success:
                         add_trace("Post", "Failed", str(buyer.id), f"Post request failed: {post_reason}", raw_response=post_data)
                         continue # Failover to next in this tier
@@ -178,9 +180,9 @@ class AuctionEngine:
         
         return await self.create_lead(lead_data, LeadStatus.UNSOLD, trace, start_time, metadata)
 
-    async def ping_safe(self, buyer: Buyer, lead_data: Dict[str, Any]):
+    async def ping_safe(self, buyer: Buyer, lead_data: Dict[str, Any], metadata: Dict[str, Any] = {}):
         try:
-            success, price, redirect, reason, context, raw_data = await self.buyer_client.ping_buyer(buyer, lead_data)
+            success, price, redirect, reason, context, raw_data = await self.buyer_client.ping_buyer(buyer, lead_data, metadata=metadata)
             return buyer, success, price, redirect, reason, context, raw_data
         except Exception as e:
             return buyer, False, 0.0, None, str(e), {}, None
@@ -198,7 +200,8 @@ class AuctionEngine:
             source_url=metadata.get("source_url"),
             ip_address=metadata.get("ip_address"),
             trusted_form_url=metadata.get("trusted_form_url"),
-            trusted_form_token=metadata.get("trusted_form_token")
+            trusted_form_token=metadata.get("trusted_form_token"),
+            validation_results=metadata.get("validation_results", [])
         )
         await lead.create()
         return lead

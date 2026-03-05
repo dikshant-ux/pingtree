@@ -23,6 +23,7 @@ class Lead(Document):
     redirect_url: Optional[str] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
     trace: List[Dict[str, Any]] = [] # [{timestamp, stage, buyer_id, status, details}]
+    validation_results: List[Dict[str, Any]] = [] # [{validator_name, success, response_body, timestamp}]
     
     # Enterprise Fields
     quality_score: float = 0.0 # 0-100

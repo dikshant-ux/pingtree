@@ -19,12 +19,15 @@ export interface Buyer {
     zip_codes: string[];
     min_age?: number;
     max_age?: number;
+    rules?: { field: string; operator: string; value: any }[];
+    filter_root?: any; // Generic for now or import WizardFilterNode
     custom_conditions?: Record<string, any>;
   };
   caps: {
     daily_cap: number;
     hourly_cap: number;
     total_cap?: number;
+    throttle_per_minute?: number;
   };
   headers?: Record<string, string>; // New: Custom Headers
 
