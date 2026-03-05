@@ -1,6 +1,6 @@
 import httpx
 import logging
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Tuple
 from app.models.validation import LeadValidationConfig
 
 logger = logging.getLogger(__name__)
