@@ -37,6 +37,7 @@ export default function Step4_Mapping({ data, updateData }: Step4Props) {
         "payFrequency", "nextPayDate", "bankAccountType", "incomeMethod", "incomeType",
         "isMilitary", "Employer", "incomeNetMonthly", "debtAssistance", "creditRating",
         "ownVehicle", "bankName", "bankState", "routingNumber", "accountNumber",
+        "driversLicenseNumber",
         "xxTrustedFormCertUrl", "xxTrustedFormToken", "xxTrustedFormPingUrl",
         "source_url", "source_domain", "trusted_form_url", "trusted_form_token"
     ]);
@@ -90,6 +91,7 @@ export default function Step4_Mapping({ data, updateData }: Step4Props) {
             "payFrequency", "nextPayDate", "bankAccountType", "incomeMethod", "incomeType",
             "isMilitary", "Employer", "incomeNetMonthly", "debtAssistance", "creditRating",
             "ownVehicle", "bankName", "bankState", "routingNumber", "accountNumber",
+            "driversLicenseNumber",
             "xxTrustedFormCertUrl", "xxTrustedFormToken", "xxTrustedFormPingUrl",
             "source_url", "source_domain", "trusted_form_url", "trusted_form_token"
         ];

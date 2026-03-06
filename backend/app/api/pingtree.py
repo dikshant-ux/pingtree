@@ -38,6 +38,7 @@ async def get_lead_fields():
         "payFrequency", "nextPayDate", "bankAccountType", "incomeMethod", "incomeType",
         "isMilitary", "Employer", "incomeNetMonthly", "debtAssistance", "creditRating",
         "ownVehicle", "bankName", "bankState", "routingNumber", "accountNumber",
+        "driversLicenseNumber",
         "xxTrustedFormCertUrl", "xxTrustedFormToken", "xxTrustedFormPingUrl",
         "source_url", "source_domain", "trusted_form_url", "trusted_form_token", "Ip_Address"
     ]

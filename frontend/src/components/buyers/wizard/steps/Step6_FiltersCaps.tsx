@@ -22,7 +22,7 @@ export default function Step6_FiltersCaps({ data, updateData }: Step6Props) {
         "First_Name", "Last_Name", "Email", "Phone", "Address", "Zip",
         "Dob", "Gender", "Ip_Address", "User_Agent", "click_id",
         "city", "state", "fullState",
-        "loanAmount", "loanPurpose", "source_url", "source_domain"
+        "loanAmount", "loanPurpose", "driversLicenseNumber", "source_url", "source_domain"
     ]);
 
     useEffect(() => {

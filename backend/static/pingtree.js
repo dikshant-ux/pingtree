@@ -142,7 +142,7 @@
         },
 
         getPublicIP: async function () {
-            
+
             try {
                 const res = await fetch('https://api.ipify.org?format=json');
                 const data = await res.json();
@@ -905,6 +905,11 @@
                                     <input type="text" class="pt-input" name="SSN" placeholder="XXX-XX-XXXX" required>
                                     <div class="pt-error-hint">Valid SSN required</div>
                                     <div class="pt-subtext">This will NOT affect your credit.<br><b>SSN is used to verify your identity.</b></div>
+                                </div>
+                                <div class="pt-group">
+                                    <label class="pt-label">Drivers License Number</label>
+                                    <input type="text" class="pt-input" name="driversLicenseNumber" placeholder="DL Number" minlength="2" maxlength="25">
+                                    <div class="pt-error-hint">Length 2-25 required</div>
                                 </div>
                             </div>
                         </div>

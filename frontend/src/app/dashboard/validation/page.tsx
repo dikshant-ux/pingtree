@@ -42,6 +42,7 @@ const DEFAULT_LEAD_FIELDS = [
     "payFrequency", "nextPayDate", "bankAccountType", "incomeMethod", "incomeType",
     "isMilitary", "Employer", "incomeNetMonthly", "debtAssistance", "creditRating",
     "ownVehicle", "bankName", "bankState", "routingNumber", "accountNumber",
+    "driversLicenseNumber",
     "xxTrustedFormCertUrl", "xxTrustedFormToken", "xxTrustedFormPingUrl",
     "source_url", "source_domain", "trusted_form_url", "trusted_form_token"
 ];
@@ -279,8 +280,8 @@ export default function LeadValidationPage() {
                                             {Object.entries(selectedConfig.param_mappings).map(([leadField, apiParam], idx) => (
                                                 <div key={idx} className="flex gap-4 items-center animate-in fade-in slide-in-from-left-2 transition-all">
                                                     <div className="flex-1">
-                                                        <Input 
-                                                            value={leadField} 
+                                                        <Input
+                                                            value={leadField}
                                                             onChange={(e) => {
                                                                 const val = e.target.value;
                                                                 const m = { ...selectedConfig.param_mappings };
