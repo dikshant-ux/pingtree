@@ -109,15 +109,14 @@
             apiKey: null,
             formId: null,
             formConfig: null,
-            publicIP: null,
-            endpoint: 'https://pingtree.vellko.com/api/v1/public/leads/ingest'
+            endpoint: '{{PT_ENDPOINT}}'
         },
 
         init: async function (apiKey, options = {}) {
             this.config.apiKey = apiKey;
 
-            // Auto-detect endpoint if not provided and not hardcoded
-            if (!options.endpoint && this.config.endpoint.includes('vellko.com')) {
+            // Auto-detect endpoint if not provided and not injected via placeholder
+            if (!options.endpoint && (this.config.endpoint === '{{PT_ENDPOINT}}' || this.config.endpoint.includes('vellko.com'))) {
                 const scriptEl = document.querySelector('script[src*="/static/pingtree.js"]');
                 if (scriptEl && scriptEl.src) {
                     try {

@@ -42,10 +42,7 @@ async def get_pingtree_js():
     
     # Inject the environment-specific endpoint
     endpoint = f"{settings.BASE_URL}{settings.API_V1_STR}/public/leads/ingest"
-    content = content.replace(
-        "endpoint: 'https://js.trustedagentforyou.com/api/v1/public/leads/ingest'",
-        f"endpoint: '{endpoint}'"
-    )
+    content = content.replace("{{PT_ENDPOINT}}", endpoint)
     
     return Response(content=content, media_type="application/javascript")
 
