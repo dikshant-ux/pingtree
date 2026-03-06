@@ -22,7 +22,7 @@ export default function RecentLeadsList() {
         const fetchLeads = async () => {
             try {
                 const res = await api.get('/reports/recent?limit=5');
-                setLeads(res.data);
+                setLeads(res.data.items);
             } catch (err) {
                 console.error("Failed to fetch recent leads", err);
             } finally {
