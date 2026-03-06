@@ -122,8 +122,18 @@ async def get_activity_stats() -> Dict[str, Any]:
         return {"data": [], "error": str(e)}
 
 @router.get("/recent")
-async def get_recent_leads(limit: int = 50):
-    return await Lead.find_all().sort("-created_at").limit(limit).to_list()
+async def get_recent_leads(page: int = 1, limit: int = 50):
+    skip = (page - 1) * limit
+    total = await Lead.find_all().count()
+    items = await Lead.find_all().sort("-created_at").skip(skip).limit(limit).to_list()
+    
+    return {
+        "items": items,
+        "total": total,
+        "page": page,
+        "limit": limit,
+        "pages": (total + limit - 1) // limit
+    }
 
 @router.get("/revenue-over-time")
 async def get_revenue_stats(start_date: Optional[datetime] = None, end_date: Optional[datetime] = None) -> Dict[str, Any]:
