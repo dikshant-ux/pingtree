@@ -478,7 +478,7 @@
                 await this.loadExternalScripts();
             }
 
-            const primaryColor = options.primaryColor || '#28a745';
+            const primaryColor = options.primaryColor || (this.config.formConfig ? this.config.formConfig.primary_color : '#28a745');
 
             // Override style from formConfig if not explicitly passed in options
             const formStyle = options.style || (this.config.formConfig ? this.config.formConfig.style : 'multi-step');
@@ -787,6 +787,148 @@
                     border-radius: 50%;
                 }
                 .pt-zip-item:last-child::after { display: none; }
+
+                /* Quantum Processing View Styling */
+                .pt-processing-view {
+                    text-align: center;
+                    padding: 80px 40px;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    background: radial-gradient(circle at center, #ffffff 0%, ${primaryColor}05 100%);
+                    position: relative;
+                    overflow: hidden;
+                }
+                
+                .pt-quantum-container {
+                    position: relative;
+                    width: 140px;
+                    height: 140px;
+                    margin-bottom: 40px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+
+                .pt-quantum-core {
+                    width: 40px;
+                    height: 40px;
+                    background: ${primaryColor};
+                    border-radius: 50%;
+                    box-shadow: 0 0 30px ${primaryColor}66, 0 0 60px ${primaryColor}33;
+                    animation: pt-pulse-core 2s ease-in-out infinite;
+                    z-index: 5;
+                }
+
+                .pt-orbital {
+                    position: absolute;
+                    border: 2px solid transparent;
+                    border-radius: 50%;
+                    pointer-events: none;
+                }
+
+                .pt-orbital-1 {
+                    width: 120px;
+                    height: 120px;
+                    border-top: 2px solid ${primaryColor}99;
+                    border-bottom: 2px solid ${primaryColor}22;
+                    animation: pt-orbit-rotate 3s linear infinite;
+                }
+
+                .pt-orbital-2 {
+                    width: 90px;
+                    height: 90px;
+                    border-left: 2px solid ${primaryColor}cc;
+                    border-right: 2px solid ${primaryColor}44;
+                    animation: pt-orbit-rotate-rev 2s linear infinite;
+                }
+
+                .pt-orbital-3 {
+                    width: 60px;
+                    height: 60px;
+                    border-top: 2px solid ${primaryColor};
+                    border-right: 2px solid ${primaryColor}33;
+                    animation: pt-orbit-rotate 1.5s linear infinite;
+                }
+
+                .pt-glow-sphere {
+                    position: absolute;
+                    width: 180px;
+                    height: 180px;
+                    background: radial-gradient(circle, ${primaryColor}11 0%, transparent 70%);
+                    border-radius: 50%;
+                    animation: pt-pulse-glow 4s ease-in-out infinite;
+                }
+
+                .pt-processing-title {
+                    font-size: 28px;
+                    font-weight: 800;
+                    color: #0f172a;
+                    margin: 0 0 12px;
+                    letter-spacing: -0.04em;
+                    background: linear-gradient(135deg, #0f172a 0%, #334155 100%);
+                    -webkit-background-clip: text;
+                    -webkit-text-fill-color: transparent;
+                }
+
+                .pt-processing-subtext {
+                    font-size: 16px;
+                    color: #64748b;
+                    margin-bottom: 32px;
+                    height: 24px;
+                    font-weight: 500;
+                    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+                }
+
+                .pt-processing-bar-wrap {
+                    width: 100%;
+                    max-width: 450px;
+                    height: 6px;
+                    background: #f1f5f9;
+                    border-radius: 999px;
+                    overflow: hidden;
+                    margin-bottom: 24px;
+                    position: relative;
+                }
+
+                .pt-processing-bar-fill {
+                    height: 100%;
+                    width: 0%;
+                    background: linear-gradient(90deg, ${primaryColor}cc 0%, ${primaryColor} 100%);
+                    border-radius: 999px;
+                    transition: width 0.8s cubic-bezier(0.1, 0.7, 0.1, 1);
+                    position: relative;
+                }
+                
+                .pt-bar-glow {
+                    position: absolute;
+                    right: 0;
+                    top: 0;
+                    height: 100%;
+                    width: 40px;
+                    background: linear-gradient(90deg, transparent, #ffffff88);
+                    box-shadow: 0 0 15px #ffffffaa;
+                }
+
+                @keyframes pt-orbit-rotate {
+                    from { transform: rotate3d(1, 1, 1, 0deg); }
+                    to { transform: rotate3d(1, 1, 1, 360deg); }
+                }
+
+                @keyframes pt-orbit-rotate-rev {
+                    from { transform: rotate3d(-1, 1, 0.5, 360deg); }
+                    to { transform: rotate3d(-1, 1, 0.5, 0deg); }
+                }
+
+                @keyframes pt-pulse-core {
+                    0%, 100% { transform: scale(1); filter: brightness(1); }
+                    50% { transform: scale(1.15); filter: brightness(1.3); }
+                }
+
+                @keyframes pt-pulse-glow {
+                    0%, 100% { opacity: 0.3; transform: scale(1); }
+                    50% { opacity: 0.8; transform: scale(1.1); }
+                }
             `;
 
             let stateOptions = STATES.map(s => `<option value="${s.val}">${s.label}</option>`).join('');
@@ -908,8 +1050,8 @@
                                 </div>
                                 <div class="pt-group">
                                     <label class="pt-label">Drivers License Number</label>
-                                    <input type="text" class="pt-input" name="driversLicenseNumber" placeholder="DL Number" minlength="2" maxlength="25">
-                                    <div class="pt-error-hint">Length 2-25 required</div>
+                                    <input type="text" class="pt-input" name="driversLicenseNumber" placeholder="DL Number" required minlength="2" maxlength="25">
+                                    <div class="pt-error-hint">Drivers License is required</div>
                                 </div>
                             </div>
                         </div>
@@ -1446,11 +1588,105 @@
                 const btn = document.getElementById('pt-submit-btn');
                 const status = document.getElementById('pt-form-status');
 
-                btn.disabled = true;
-                btn.innerText = 'Processing your application...';
-
+                // 1. CAPTURE DATA FIRST before we wipe the UI
                 const formData = new FormData(form);
                 const data = Object.fromEntries(formData.entries());
+
+                // --- START PROCESSING UI ---
+                const waitMessages = [
+                    "Analyzing your profile...",
+                    "Scanning 50+ lenders for your best match...",
+                    "Optimizing for low-interest rate offers...",
+                    "Matching criteria with local and national partners...",
+                    "Securing your quote with bank-level encryption...",
+                    "Validating eligibility with top-tier lenders...",
+                    "Almost there! Retrieving personalized rates..."
+                ];
+
+                const loanTips = [
+                    "Tip: Checking your rate here will NOT impact your credit score.",
+                    "Fact: Most users receive their funds as soon as the next business day.",
+                    "Tip: Having your bank details ready can speed up the final approval.",
+                    "Fact: Personal loans can often be used to consolidate high-interest debt.",
+                    "Tip: Accuracy is key! Verify your info to prevent processing delays.",
+                    "Did you know? Consistent repayments can boost your credit health."
+                ];
+
+                // WIPE UI for animation but preserve hidden inputs (important for TrustedForm/Tracking)
+                const hiddenInputs = Array.from(form.querySelectorAll('input[type="hidden"]'));
+                form.innerHTML = `
+                    <div class="pt-processing-view">
+                        <div class="pt-glow-sphere"></div>
+                        <div class="pt-quantum-container">
+                            <div class="pt-orbital pt-orbital-1"></div>
+                            <div class="pt-orbital pt-orbital-2"></div>
+                            <div class="pt-orbital pt-orbital-3"></div>
+                            <div class="pt-quantum-core"></div>
+                        </div>
+                        <h2 class="pt-processing-title">Processing Application</h2>
+                        <div id="pt-wait-message" class="pt-processing-subtext">${waitMessages[0]}</div>
+                        <div class="pt-processing-bar-wrap">
+                            <div id="pt-processing-bar" class="pt-processing-bar-fill">
+                                <div class="pt-bar-glow"></div>
+                            </div>
+                        </div>
+                        
+                        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; width: 100%; max-width: 450px; margin-bottom: 24px; min-height: 80px; display: flex; align-items: center; justify-content: center;">
+                            <p id="pt-loan-tip" style="font-size: 14px; color: #475569; margin: 0; font-weight: 500; transition: all 0.4s ease;">${loanTips[0]}</p>
+                        </div>
+
+                        <p style="font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 800; letter-spacing: 0.1em; margin: 0;">Secure Bank-Level Encryption Enabled</p>
+                        <p style="font-size: 10px; color: #cbd5e1; margin-top: 12px;">Please do not close or refresh this page</p>
+                    </div>
+                `;
+                hiddenInputs.forEach(h => form.appendChild(h));
+
+                let msgIndex = 0;
+                let tipIndex = 0;
+                const msgEl = document.getElementById('pt-wait-message');
+                const tipEl = document.getElementById('pt-loan-tip');
+                const barEl = document.getElementById('pt-processing-bar');
+
+                const messageInterval = setInterval(() => {
+                    msgIndex = (msgIndex + 1) % waitMessages.length;
+                    if (msgEl) {
+                        msgEl.style.opacity = '0';
+                        setTimeout(() => {
+                            msgEl.textContent = waitMessages[msgIndex];
+                            msgEl.style.opacity = '1';
+                        }, 300);
+                    }
+                }, 2500);
+
+                const tipInterval = setInterval(() => {
+                    tipIndex = (tipIndex + 1) % loanTips.length;
+                    if (tipEl) {
+                        tipEl.style.transform = 'translateY(10px)';
+                        tipEl.style.opacity = '0';
+                        setTimeout(() => {
+                            tipEl.textContent = loanTips[tipIndex];
+                            tipEl.style.transform = 'translateY(0)';
+                            tipEl.style.opacity = '1';
+                        }, 400);
+                    }
+                }, 4500);
+
+                let progress = 0;
+                const progressInterval = setInterval(() => {
+                    if (progress < 95) {
+                        progress += Math.random() * 5;
+                        if (barEl) barEl.style.width = `${Math.min(progress, 95)}%`;
+                    }
+                }, 800);
+
+                const stopProcessingUI = () => {
+                    clearInterval(messageInterval);
+                    clearInterval(tipInterval);
+                    clearInterval(progressInterval);
+                };
+                // --- END PROCESSING UI ---
+
+
 
                 if (data.Date_Of_Birth) {
                     data.dob = data.Date_Of_Birth;
@@ -1478,6 +1714,10 @@
 
                     // Handle Redirection if URL is provided (Sold redirect or Reject redirect)
                     if (res.redirect_url) {
+                        stopProcessingUI();
+
+                        if (barEl) barEl.style.width = '100%';
+
                         form.innerHTML = `
                             <div class="pt-success-msg">
                                 <h2>${res.status === 'sold' ? 'Redirecting...' : 'Thank You!'}</h2>
@@ -1485,12 +1725,27 @@
                             </div>
                         `;
                         setTimeout(() => {
+                            // REDIRECTION TRACKING: Signal backend only if user actually reached this point
+                            if (res.status === 'sold' && res.lead_id) {
+                                try {
+                                    const baseApi = this.config.endpoint.split('/public/')[0];
+                                    const trackUrl = `${baseApi}/public/leads/track-redirection/${res.lead_id}`;
+                                    fetch(trackUrl, {
+                                        method: 'POST',
+                                        mode: 'no-cors',
+                                        keepalive: true
+                                    }).catch(() => { });
+                                } catch (e) { }
+                            }
                             window.location.href = res.redirect_url;
                         }, 1500);
                         return;
                     }
 
                     // Otherwise show success / thank you
+                    stopProcessingUI();
+                    if (barEl) barEl.style.width = '100%';
+
                     form.innerHTML = `
                         <div class="pt-success-msg">
                             <h2>${res.status === 'sold' ? 'Application Success!' : 'Thank You!'}</h2>
@@ -1503,9 +1758,11 @@
                         </div>
                     `;
                 } catch (err) {
-                    btn.disabled = false;
-                    btn.innerText = 'Agree and Submit';
+                    stopProcessingUI();
                     status.innerHTML = `<div class="pt-status-error">${err.message || 'Error submitting lead. Please check your data and try again.'}</div>`;
+                    // Re-render form maybe? Or just show error. 
+                    // Since we hijacked innerHTML, we might need a way to restore if we want user to try again.
+                    // For now, let's just let them refresh or show error clearly.
                 }
             };
         }

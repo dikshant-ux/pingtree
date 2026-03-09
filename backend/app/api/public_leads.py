@@ -157,3 +157,21 @@ async def public_ingest_lead(
         processed_at=result.created_at,
         redirect_url=result.redirect_url
     )
+
+@router.post("/track-redirection/{lead_id}")
+async def track_lead_redirection(lead_id: str):
+    from app.models.lead import Lead
+    lead = await Lead.get(lead_id)
+    if not lead:
+        raise HTTPException(status_code=404, detail="Lead not found")
+    
+    lead.is_redirected = True
+    lead.redirected_at = datetime.utcnow()
+    lead.trace.append({
+        "timestamp": lead.redirected_at.isoformat(),
+        "stage": "Redirection",
+        "status": "Transferred",
+        "details": "User triggered redirection to buyer URL"
+    })
+    await lead.save()
+    return {"status": "success", "is_redirected": True, "redirected_at": lead.redirected_at}

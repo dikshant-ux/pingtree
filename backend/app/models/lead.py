@@ -38,6 +38,8 @@ class Lead(Document):
     ip_address: Optional[str] = None
     trusted_form_url: Optional[str] = None
     trusted_form_token: Optional[str] = None
+    is_redirected: bool = False
+    redirected_at: Optional[datetime] = None
 
     class Settings:
         name = "leads"

@@ -35,6 +35,7 @@ interface Lead {
     source_domain?: string;
     form_id?: string;
     trusted_form_url?: string;
+    is_redirected?: boolean;
     validation_results?: any[];
 }
 
@@ -113,6 +114,7 @@ export default function LeadsPage() {
                                     <TableHead className="font-semibold text-slate-700">Latency</TableHead>
                                     <TableHead className="min-w-[150px] font-semibold text-slate-700">Validation</TableHead>
                                     <TableHead className="font-semibold text-slate-700">Source</TableHead>
+                                    <TableHead className="font-semibold text-slate-700">Redirected</TableHead>
                                     <TableHead className="font-semibold text-slate-700">Date</TableHead>
                                     <TableHead className="text-right font-semibold text-slate-700">Action</TableHead>
                                 </TableRow>
@@ -186,6 +188,14 @@ export default function LeadsPage() {
                                                         </a>
                                                     )}
                                                 </div>
+                                            </TableCell>
+                                            <TableCell>
+                                                <Badge
+                                                    variant={lead.is_redirected ? "default" : "destructive"}
+                                                    className={`font-bold px-2.5 py-0.5 rounded-full text-[10px] shadow-sm ${lead.is_redirected ? "bg-emerald-500 hover:bg-emerald-600" : ""}`}
+                                                >
+                                                    {lead.is_redirected ? 'YES' : 'NO'}
+                                                </Badge>
                                             </TableCell>
                                             <TableCell className="text-slate-500 text-xs font-medium">
                                                 {new Date(lead.created_at).toLocaleString()}
