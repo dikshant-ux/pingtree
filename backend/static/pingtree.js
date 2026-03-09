@@ -933,6 +933,7 @@
 
             let stateOptions = STATES.map(s => `<option value="${s.val}">${s.label}</option>`).join('');
             const siteOrigin = window.location.origin;
+            const siteHost = window.location.hostname;
             const privacyUrl = `${siteOrigin}/privacy-policy`;
             const termsUrl = `${siteOrigin}/terms-and-conditions`;
 
@@ -1253,7 +1254,7 @@
                                 <div class="pt-terms">
                                     By clicking "AGREE AND SUBMIT" I acknowledge that I have read and agree to the terms of the <a href="${privacyUrl}" target="_blank" style="color: inherit; text-decoration: underline;">Privacy Policy</a> and <a href="${termsUrl}" target="_blank" style="color: inherit; text-decoration: underline;">Terms of Use</a>, which contain a mandatory arbitration clause.
                                     <br><br>
-                                    I also consent to receive marketing and other texts or calls from myreliablefunds and/or its marketing partners at the number previously provided, by any means or technology, including an automatic dialing system, to the phone number I have provided, even if that number is on a national or state Do-Not-Call registry. Carrier and data rates may apply. I understand that my consent to such calls and text messages is not required to purchase products from or use the services of myreliablefunds and/or its marketing partners.
+                                    I also consent to receive marketing and other texts or calls from ${siteHost} and/or its marketing partners at the number previously provided, by any means or technology, including an automatic dialing system, to the phone number I have provided, even if that number is on a national or state Do-Not-Call registry. Carrier and data rates may apply. I understand that my consent to such calls and text messages is not required to purchase products from or use the services of ${siteHost} and/or its marketing partners.
                                 </div>
                                 
                                 <button type="submit" class="pt-footer-btn" id="pt-submit-btn">AGREE AND SUBMIT</button>
