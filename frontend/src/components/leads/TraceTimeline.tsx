@@ -38,11 +38,6 @@ export function TraceTimeline({ trace }: TraceTimelineProps) {
         return <Clock className="w-5 h-5 text-indigo-500" />;
     };
 
-    const getBuyerName = (id?: string) => {
-        // ideally we would look up buyer name from a context or prop, 
-        // but for now we'll just show the ID or "System"
-        return id ? `Buyer: ${id}` : 'System';
-    };
 
     return (
         <div className="relative space-y-8 before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-border before:to-transparent">

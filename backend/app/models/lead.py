@@ -16,6 +16,7 @@ class LeadStatus(str, Enum):
 class Lead(Document):
     lead_data: Dict[str, Any]
     status: LeadStatus = LeadStatus.NEW
+    readable_id: Optional[str] = None
     buyer_id: Optional[str] = None # ID of the buyer it was sold to
     buyer_name: Optional[str] = None
     sold_price: float = 0.0

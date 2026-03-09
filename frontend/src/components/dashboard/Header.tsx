@@ -12,8 +12,11 @@ import {
     BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 
+import { useBreadcrumbs } from "@/context/BreadcrumbContext"
+
 export function Header() {
     const pathname = usePathname()
+    const { customLabels } = useBreadcrumbs()
     const paths = pathname.split('/').filter(Boolean)
 
     return (
@@ -23,7 +26,7 @@ export function Header() {
                     {paths.map((path, index) => {
                         const href = `/${paths.slice(0, index + 1).join('/')}`
                         const isLast = index === paths.length - 1
-                        const label = path.charAt(0).toUpperCase() + path.slice(1)
+                        const label = customLabels[href] || path.charAt(0).toUpperCase() + path.slice(1)
 
                         return (
                             <div key={path} className="flex items-center">

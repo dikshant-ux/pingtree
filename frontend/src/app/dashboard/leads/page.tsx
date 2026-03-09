@@ -26,8 +26,9 @@ import {
 
 interface Lead {
     _id: string;
+    readable_id?: string;
     lead_data: any;
-    status: 'new' | 'processing' | 'sold' | 'rejected' | 'error';
+    status: 'new' | 'processing' | 'sold' | 'rejected' | 'error' | 'Invalid Lead';
     sold_price: number;
     latency_ms: number;
     created_at: string;
@@ -135,8 +136,8 @@ export default function LeadsPage() {
                                 ) : (
                                     leads.map((lead) => (
                                         <TableRow key={lead._id} className="hover:bg-slate-50/80 transition-colors">
-                                            <TableCell className="font-mono text-[10px] text-slate-500 font-medium">
-                                                {lead._id.substring(0, 8)}...
+                                            <TableCell className="font-bold text-indigo-700">
+                                                {lead.readable_id || lead._id.substring(0, 8)}
                                             </TableCell>
                                             <TableCell>
                                                 <Badge className="capitalize font-semibold shadow-sm" variant={

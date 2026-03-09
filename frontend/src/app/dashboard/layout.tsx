@@ -6,6 +6,8 @@ import { useEffect, useState } from 'react';
 import { Sidebar } from '@/components/dashboard/Sidebar';
 import { Header } from '@/components/dashboard/Header';
 
+import { BreadcrumbProvider } from '@/context/BreadcrumbContext';
+
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
     const router = useRouter();
     const [mounted, setMounted] = useState(false);
@@ -21,17 +23,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     if (!mounted) return null;
 
     return (
-        <div className="flex h-screen overflow-hidden bg-background">
-            <Sidebar />
+        <BreadcrumbProvider>
+            <div className="flex h-screen overflow-hidden bg-background">
+                <Sidebar />
 
-            <div className="flex flex-col flex-1 overflow-hidden relative">
-                <Header />
+                <div className="flex flex-col flex-1 overflow-hidden relative">
+                    <Header />
 
-                {/* Main Content */}
-                <main className="flex-1 overflow-y-auto bg-slate-50/100 dark:bg-muted/20 p-8">
-                    {children}
-                </main>
+                    {/* Main Content */}
+                    <main className="flex-1 overflow-y-auto bg-slate-50/100 dark:bg-muted/20 p-8">
+                        {children}
+                    </main>
+                </div>
             </div>
-        </div>
+        </BreadcrumbProvider>
     );
 }

@@ -6,6 +6,7 @@ from datetime import datetime
 
 from app.models.lead import Lead, LeadStatus
 from app.models.buyer import Buyer, BuyerStatus
+from app.models.counter import Counter
 from app.db.redis import redis_client
 
 from app.services.ping.quality_engine import QualityScoringEngine
@@ -25,12 +26,13 @@ class AuctionEngine:
         start_time = time.time()
         trace = []
         
-        def add_trace(stage: str, status: str, buyer_id: str = None, details: str = None, raw_response: Any = None):
+        def add_trace(stage: str, status: str, buyer_id: str = None, buyer_name: str = None, details: str = None, raw_response: Any = None):
             trace.append({
                 "timestamp": datetime.utcnow().isoformat(),
                 "stage": stage,
                 "status": status,
                 "buyer_id": buyer_id,
+                "buyer_name": buyer_name,
                 "details": details,
                 "raw_response": raw_response
             })
@@ -60,14 +62,14 @@ class AuctionEngine:
             # Filter Check
             passed, reason = FilterEngine.check_filters(buyer, lead_data)
             if not passed:
-                add_trace("Filter", "Skipped", str(buyer.id), reason)
+                add_trace("Filter", "Skipped", str(buyer.id), buyer.name, reason)
                 continue
                 
             # Throttle Check
             throttle_limit = getattr(buyer.caps, "throttle_per_minute", 0)
             if throttle_limit > 0:
                 if not await redis_client.throttle_check(f"buyer:{buyer.id}:throttle:minute", throttle_limit, 60):
-                    add_trace("Throttle", "Skipped", str(buyer.id), f"Rate limit {throttle_limit}/min exceeded")
+                    add_trace("Throttle", "Skipped", str(buyer.id), buyer.name, f"Rate limit {throttle_limit}/min exceeded")
                     continue
                 
             # Add to Tier (default Tier 2 if None)
@@ -96,7 +98,7 @@ class AuctionEngine:
             for buyer in direct_candidates:
                 price = buyer.payout
                 score = RankingEngine.calculate_score(buyer, price)
-                add_trace("Auction", "Accepted (Direct)", str(buyer.id), f"Price: ${price}, Score: {score}")
+                add_trace("Auction", "Accepted (Direct)", str(buyer.id), buyer.name, f"Price: ${price}, Score: {score}")
                 accepted_bids.append({
                     "buyer": buyer,
                     "price": price,
@@ -111,7 +113,7 @@ class AuctionEngine:
                 for buyer, success, price, redirect, reason, context, raw_data in results:
                     if success:
                         score = RankingEngine.calculate_score(buyer, price)
-                        add_trace("Ping", "Accepted", str(buyer.id), f"Price: ${price}, Score: {score}", raw_response=raw_data)
+                        add_trace("Ping", "Accepted", str(buyer.id), buyer.name, f"Price: ${price}, Score: {score}", raw_response=raw_data)
                         accepted_bids.append({
                             "buyer": buyer,
                             "price": price,
@@ -121,7 +123,7 @@ class AuctionEngine:
                             "raw_data": raw_data
                         })
                     else:
-                        add_trace("Ping", "Rejected", str(buyer.id), reason, raw_response=raw_data)
+                        add_trace("Ping", "Rejected", str(buyer.id), buyer.name, reason, raw_response=raw_data)
 
             if not accepted_bids:
                 add_trace("Auction", f"Tier {tier_level} Failed", details="No accepted bids in this tier")
@@ -134,25 +136,25 @@ class AuctionEngine:
             for bid in ranked_bids:
                 buyer = bid["buyer"]
                 context = bid.get("context", {})
-                add_trace("Post", "Attempting", str(buyer.id), f"Rank 1 in Tier {tier_level}. Score: {bid['score']}")
+                add_trace("Post", "Attempting", str(buyer.id), buyer.name, f"Rank 1 in Tier {tier_level}. Score: {bid['score']}")
                 
                 final_redirect = bid["redirect"]
                 
                 if (buyer.type == "ping_post" and buyer.post_url) or buyer.type in ["full_post", "redirect"]:
                     success, post_price, post_redirect, post_reason, post_data = await self.buyer_client.post_buyer(buyer, lead_data, context=context, metadata=metadata)
                     if not success:
-                        add_trace("Post", "Failed", str(buyer.id), f"Post request failed: {post_reason}", raw_response=post_data)
+                        add_trace("Post", "Failed", str(buyer.id), buyer.name, f"Post request failed: {post_reason}", raw_response=post_data)
                         continue # Failover to next in this tier
                     
                     # Update with dynamic price if supplied in post response
                     if post_price > 0:
-                        add_trace("Post", "Dynamic Payout", str(buyer.id), f"Extracted Price: ${post_price}")
+                        add_trace("Post", "Dynamic Payout", str(buyer.id), buyer.name, f"Extracted Price: ${post_price}")
                         bid["price"] = post_price
                         
                     if post_redirect:
                         final_redirect = post_redirect
                     
-                    add_trace("Post", "Success", str(buyer.id), "Lead sold", raw_response=post_data)
+                    add_trace("Post", "Success", str(buyer.id), buyer.name, "Lead sold", raw_response=post_data)
                 
                 # SOLD
                 lead = await self.create_lead(lead_data, LeadStatus.SOLD, trace, start_time, metadata)
@@ -187,23 +189,47 @@ class AuctionEngine:
         except Exception as e:
             return buyer, False, 0.0, None, str(e), {}, None
 
-    async def create_lead(self, data, status, trace, start_time, metadata: Dict[str, Any] = {}):
-        latency = int((time.time() - start_time) * 1000)
-        lead = Lead(
-            lead_data=data,
-            status=status,
-            latency_ms=latency,
-            trace=trace,
-            quality_score=data.get("quality_score", 0),
-            form_id=metadata.get("form_id"),
-            source_domain=metadata.get("source_domain"),
-            source_url=metadata.get("source_url"),
-            ip_address=metadata.get("ip_address"),
-            trusted_form_url=metadata.get("trusted_form_url"),
-            trusted_form_token=metadata.get("trusted_form_token"),
-            validation_results=metadata.get("validation_results", [])
-        )
-        await lead.create()
-        return lead
+    async def create_lead(self, data: Dict[str, Any], status, trace: List, start_time: float = None, metadata: Dict[str, Any] = {}):
+        try:
+            if start_time is None:
+                start_time = time.time()
+            latency = int((time.time() - start_time) * 1000)
+            
+            # Increment and get new value atomically
+            from pymongo import ReturnDocument
+            counter_col = Counter.get_pymongo_collection()
+            updated_counter = await counter_col.find_one_and_update(
+                {"collection_name": "leads"},
+                {"$inc": {"last_value": 1}},
+                upsert=True,
+                return_document=ReturnDocument.AFTER
+            )
+            
+            new_val = 1
+            if updated_counter and "last_value" in updated_counter:
+                new_val = updated_counter["last_value"]
+            
+            readable_id = f"LD-{new_val}"
+            
+            lead = Lead(
+                lead_data=data,
+                status=status,
+                readable_id=readable_id,
+                latency_ms=latency,
+                trace=trace,
+                quality_score=data.get("quality_score", 0.0),
+                form_id=metadata.get("form_id"),
+                source_domain=metadata.get("source_domain"),
+                source_url=metadata.get("source_url"),
+                ip_address=metadata.get("ip_address"),
+                trusted_form_url=metadata.get("trusted_form_url"),
+                trusted_form_token=metadata.get("trusted_form_token"),
+                validation_results=metadata.get("validation_results", [])
+            )
+            await lead.insert()
+            return lead
+        except Exception as e:
+            logger.error(f"Error in create_lead: {str(e)}", exc_info=True)
+            raise e
 
 auction_engine = AuctionEngine()

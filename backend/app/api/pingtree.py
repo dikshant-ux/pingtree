@@ -57,4 +57,29 @@ async def get_lead(id: str):
     if not lead:
         from fastapi import HTTPException
         raise HTTPException(status_code=404, detail="Lead not found")
+    
+    # Enrichment for historical leads
+    if lead.trace:
+        from app.models.buyer import Buyer
+        buyer_cache = {}
+        enriched = False
+        
+        for event in lead.trace:
+            buyer_id = event.get("buyer_id")
+            if buyer_id and not event.get("buyer_name"):
+                if buyer_id not in buyer_cache:
+                    try:
+                        b_oid = PydanticObjectId(buyer_id)
+                        buyer = await Buyer.get(b_oid)
+                        buyer_cache[buyer_id] = buyer.name if buyer else "Unknown Buyer"
+                    except:
+                        buyer_cache[buyer_id] = "Unknown Buyer"
+                
+                event["buyer_name"] = buyer_cache[buyer_id]
+                enriched = True
+        
+        # If we enriched the object, we don't necessarily need to save it back to DB 
+        # unless we want to persist the enrichment. 
+        # For now, just returning it enriched is enough for the UI.
+        
     return lead

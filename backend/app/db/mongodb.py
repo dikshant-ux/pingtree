@@ -8,9 +8,10 @@ from app.models.lead import Lead
 from app.models.form import LeadForm
 from app.models.validation import LeadValidationConfig
 from app.models.domain_mapping import DomainTokenMapping
+from app.models.counter import Counter
 
 async def init_db():
     client = AsyncIOMotorClient(settings.MONGODB_URL)
     db = client[settings.DATABASE_NAME]
     
-    await init_beanie(database=db, document_models=[User, Buyer, Lead, LeadForm, LeadValidationConfig, DomainTokenMapping])
+    await init_beanie(database=db, document_models=[User, Buyer, Lead, LeadForm, LeadValidationConfig, DomainTokenMapping, Counter])

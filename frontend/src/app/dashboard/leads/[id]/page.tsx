@@ -9,9 +9,13 @@ import { TraceTimeline } from '@/components/leads/TraceTimeline';
 import { ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { useBreadcrumbs } from '@/context/BreadcrumbContext';
+import { usePathname } from 'next/navigation';
 
 export default function LeadDetailsPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
+    const pathname = usePathname();
+    const { setCustomLabel } = useBreadcrumbs();
     const [lead, setLead] = useState<any>(null);
     const [loading, setLoading] = useState(true);
 
@@ -20,6 +24,9 @@ export default function LeadDetailsPage({ params }: { params: Promise<{ id: stri
             try {
                 const res = await api.get(`/leads/${id}`);
                 setLead(res.data);
+                if (res.data.readable_id) {
+                    setCustomLabel(pathname, res.data.readable_id);
+                }
             } catch (err) {
                 console.error("Failed to fetch lead", err);
             } finally {
@@ -27,7 +34,7 @@ export default function LeadDetailsPage({ params }: { params: Promise<{ id: stri
             }
         };
         fetchLead();
-    }, [id]);
+    }, [id, pathname, setCustomLabel]);
 
     if (loading) return <div>Loading lead details...</div>;
     if (!lead) return <div>Lead not found.</div>;
@@ -43,8 +50,8 @@ export default function LeadDetailsPage({ params }: { params: Promise<{ id: stri
                 <div>
                     <h2 className="text-3xl font-bold tracking-tight text-foreground flex items-center gap-3">
                         Lead Details
-                        <Badge variant="outline" className="font-mono text-base font-normal">
-                            #{lead._id.substring(0, 8)}
+                        <Badge variant="outline" className="font-bold text-base bg-indigo-50 text-indigo-700 border-indigo-200">
+                            {lead.readable_id || `#${lead._id.substring(0, 8)}`}
                         </Badge>
                     </h2>
                     <p className="text-muted-foreground">
