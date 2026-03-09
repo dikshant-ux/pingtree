@@ -121,11 +121,26 @@ async def get_activity_stats() -> Dict[str, Any]:
         logger.error(f"Error in get_activity_stats: {str(e)}", exc_info=True)
         return {"data": [], "error": str(e)}
 
+@router.get("/sources")
+async def get_unique_sources():
+    try:
+        coll = get_leads_collection()
+        sources = await coll.distinct("source_domain")
+        return [s for s in sources if s] # Filter out None/Empty
+    except Exception as e:
+        logger.error(f"Error in get_unique_sources: {str(e)}")
+        return []
+
 @router.get("/recent")
-async def get_recent_leads(page: int = 1, limit: int = 50):
+async def get_recent_leads(page: int = 1, limit: int = 50, source_domain: Optional[str] = None):
     skip = (page - 1) * limit
-    total = await Lead.find_all().count()
-    items = await Lead.find_all().sort("-created_at").skip(skip).limit(limit).to_list()
+    
+    query = {}
+    if source_domain and source_domain != "all":
+        query["source_domain"] = source_domain
+        
+    total = await Lead.find(query).count()
+    items = await Lead.find(query).sort("-created_at").skip(skip).limit(limit).to_list()
     
     return {
         "items": items,

@@ -46,11 +46,14 @@ export default function LeadsPage() {
     const [totalPages, setTotalPages] = useState(1);
     const [totalLeads, setTotalLeads] = useState(0);
     const [pageSize, setPageSize] = useState(20);
+    const [sources, setSources] = useState<string[]>([]);
+    const [selectedSource, setSelectedSource] = useState<string>('all');
 
-    const fetchLeads = async (pageNum: number, limit: number) => {
+    const fetchLeads = async (pageNum: number, limit: number, source: string) => {
         setLoading(true);
         try {
-            const res = await api.get(`/reports/recent?page=${pageNum}&limit=${limit}`);
+            const sourceParam = source !== 'all' ? `&source_domain=${source}` : '';
+            const res = await api.get(`/reports/recent?page=${pageNum}&limit=${limit}${sourceParam}`);
             setLeads(res.data.items);
             setTotalLeads(res.data.total);
             setTotalPages(res.data.pages);
@@ -61,9 +64,22 @@ export default function LeadsPage() {
         }
     };
 
+    const fetchSources = async () => {
+        try {
+            const res = await api.get('/reports/sources');
+            setSources(res.data);
+        } catch (err) {
+            console.error("Failed to fetch sources", err);
+        }
+    };
+
     useEffect(() => {
-        fetchLeads(page, pageSize);
-    }, [page, pageSize]);
+        fetchSources();
+    }, []);
+
+    useEffect(() => {
+        fetchLeads(page, pageSize, selectedSource);
+    }, [page, pageSize, selectedSource]);
 
     if (loading && page === 1 && leads.length === 0) return <div className="p-8 text-center">Loading leads...</div>;
 
@@ -81,18 +97,35 @@ export default function LeadsPage() {
                         View incoming lead traffic. Total: {totalLeads}
                     </p>
                 </div>
-                <div className="flex items-center gap-3 bg-white p-2 rounded-lg border shadow-sm">
-                    <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Per Page:</span>
-                    <Select value={pageSize.toString()} onValueChange={handlePageSizeChange}>
-                        <SelectTrigger className="w-[80px] h-8 text-xs font-medium border-slate-200">
-                            <SelectValue placeholder="Size" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="20" className="text-xs">20</SelectItem>
-                            <SelectItem value="50" className="text-xs">50</SelectItem>
-                            <SelectItem value="100" className="text-xs">100</SelectItem>
-                        </SelectContent>
-                    </Select>
+                <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-3 bg-white p-2 rounded-lg border shadow-sm">
+                        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Source:</span>
+                        <Select value={selectedSource} onValueChange={(val) => { setSelectedSource(val); setPage(1); }}>
+                            <SelectTrigger className="w-[180px] h-8 text-xs font-medium border-slate-200">
+                                <SelectValue placeholder="All Sources" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all" className="text-xs font-bold text-indigo-600">All Sources</SelectItem>
+                                {sources.map(s => (
+                                    <SelectItem key={s} value={s} className="text-xs">{s}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div className="flex items-center gap-3 bg-white p-2 rounded-lg border shadow-sm">
+                        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Per Page:</span>
+                        <Select value={pageSize.toString()} onValueChange={handlePageSizeChange}>
+                            <SelectTrigger className="w-[80px] h-8 text-xs font-medium border-slate-200">
+                                <SelectValue placeholder="Size" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="20" className="text-xs">20</SelectItem>
+                                <SelectItem value="50" className="text-xs">50</SelectItem>
+                                <SelectItem value="100" className="text-xs">100</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
                 </div>
             </div>
 
