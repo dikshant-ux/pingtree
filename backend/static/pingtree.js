@@ -1595,6 +1595,7 @@
                 // --- START PROCESSING UI ---
                 const waitMessages = [
                     "Analyzing your profile...",
+                    "Hold on! We are finding the best match for you...",
                     "Scanning 50+ lenders for your best match...",
                     "Optimizing for low-interest rate offers...",
                     "Matching criteria with local and national partners...",
@@ -1721,7 +1722,12 @@
                         form.innerHTML = `
                             <div class="pt-success-msg">
                                 <h2>${res.status === 'sold' ? 'Redirecting...' : 'Thank You!'}</h2>
-                                <p>${res.status === 'sold' ? 'Hold on! We are taking you to your next step.' : 'Redirecting you to our partner page...'}</p>
+                                <p>${res.status === 'sold' ? 'Hold on! We are taking you to your next step.' : 'Redirecting you to our lender page...'}</p>
+                                
+                                <div style="margin-top: 24px;">
+                                    <p style="font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 800; letter-spacing: 0.1em; margin: 0;">Secure Bank-Level Encryption Enabled</p>
+                                    <p style="font-size: 10px; color: #cbd5e1; margin-top: 12px;">Please do not close or refresh this page</p>
+                                </div>
                             </div>
                         `;
                         setTimeout(() => {
