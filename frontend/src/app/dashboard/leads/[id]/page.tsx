@@ -11,6 +11,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { useBreadcrumbs } from '@/context/BreadcrumbContext';
 import { usePathname } from 'next/navigation';
+import { ValidationStatus } from '@/components/leads/ValidationStatus';
 
 export default function LeadDetailsPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
@@ -107,9 +108,24 @@ export default function LeadDetailsPage({ params }: { params: Promise<{ id: stri
                     </Card>
 
                     {lead.validation_results && lead.validation_results.length > 0 && (
+                        <Card className="border-indigo-100 shadow-sm overflow-hidden">
+                            <CardHeader className="bg-indigo-50/30 pb-3 border-b border-indigo-100">
+                                <CardTitle className="text-lg">Validation Summary</CardTitle>
+                                <CardDescription>Smart quality analysis results.</CardDescription>
+                            </CardHeader>
+                            <CardContent className="pt-5 flex flex-col gap-4">
+                                <ValidationStatus results={lead.validation_results} />
+                                <div className="text-[10px] text-muted-foreground bg-slate-50 p-2 rounded border border-slate-100 italic">
+                                    Hover over badges to see detailed feedback and provider information.
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
+
+                    {lead.validation_results && lead.validation_results.length > 0 && (
                         <Card>
                             <CardHeader>
-                                <CardTitle>Validation Results</CardTitle>
+                                <CardTitle>Raw Validation Results</CardTitle>
                                 <CardDescription>Full response from external validators.</CardDescription>
                             </CardHeader>
                             <CardContent>

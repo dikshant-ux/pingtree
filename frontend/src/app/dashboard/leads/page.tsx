@@ -15,6 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { CheckCircle2 } from "lucide-react";
+import { ValidationStatus } from '@/components/leads/ValidationStatus';
 
 import {
     Select,
@@ -206,21 +207,7 @@ export default function LeadsPage() {
                                                 {lead.latency_ms}ms
                                             </TableCell>
                                             <TableCell>
-                                                {lead.validation_results && lead.validation_results.length > 0 ? (
-                                                    <div className="flex flex-wrap gap-1.5">
-                                                        {lead.validation_results.map((res: any, idx: number) => (
-                                                            <Badge
-                                                                key={idx}
-                                                                variant={res.success ? "outline" : "destructive"}
-                                                                className={res.success ? "text-[10px] border-emerald-200 text-emerald-700 bg-emerald-50 font-bold" : "text-[10px] shadow-sm font-bold"}
-                                                            >
-                                                                {res.validator_name}: {res.success ? 'Valid' : 'Invalid'}
-                                                            </Badge>
-                                                        ))}
-                                                    </div>
-                                                ) : (
-                                                    <span className="text-[10px] text-slate-400 italic">None</span>
-                                                )}
+                                                <ValidationStatus results={lead.validation_results || []} />
                                             </TableCell>
                                             <TableCell>
                                                 <div className="flex flex-col gap-1.5">
