@@ -55,7 +55,7 @@ class ValidatorService:
 
                 if response.status_code != 200:
                     logger.error(f"Validator API returned status {response.status_code}: {response.text}")
-                    # In case of API error, we might decide to fail-safe (accept) or fail-secure (reject)
+                    # In case of API error, we might decide to fail-secure (reject)
                     # For now, let's reject if the validator is down
                     return False, {"error": f"API returned {response.status_code}", "body": result}
 
@@ -69,6 +69,9 @@ class ValidatorService:
                 
                 return is_valid, result
 
+        except httpx.TimeoutException:
+            logger.error(f"Timeout during lead validation for URL: {config.api_url}")
+            return False, {"error": "validator_timeout"}
         except Exception as e:
             logger.error(f"Error during lead validation: {str(e)}")
             # Fail-safe: if validator service is down, let the lead through
