@@ -137,7 +137,13 @@ async def get_unique_sources():
         return []
 
 @router.get("/recent")
-async def get_recent_leads(page: int = 1, limit: int = 50, source_domain: Optional[str] = None, status: Optional[str] = None):
+async def get_recent_leads(
+    page: int = 1, 
+    limit: int = 50, 
+    source_domain: Optional[str] = None, 
+    status: Optional[str] = None,
+    search: Optional[str] = None
+):
     skip = (page - 1) * limit
     
     query = {}
@@ -149,6 +155,20 @@ async def get_recent_leads(page: int = 1, limit: int = 50, source_domain: Option
             query["status"] = {"$in": ["unsold", "rejected", "error"]}
         else:
             query["status"] = status
+    
+    if search:
+        # Build a flexible search query across multiple fields
+        search_regex = {"$regex": search, "$options": "i"}
+        query["$or"] = [
+            {"readable_id": search_regex},
+            {"_id": search_regex},
+            {"lead_data.email": search_regex},
+            {"lead_data.phone": search_regex},
+            {"lead_data.first_name": search_regex},
+            {"lead_data.last_name": search_regex},
+            {"lead_data.FirstName": search_regex},
+            {"lead_data.LastName": search_regex}
+        ]
         
     total = await Lead.find(query).count()
     items = await Lead.find(query).sort("-created_at").skip(skip).limit(limit).to_list()

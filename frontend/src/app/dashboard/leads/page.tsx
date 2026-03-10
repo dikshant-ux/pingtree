@@ -14,8 +14,9 @@ import {
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, Search } from "lucide-react";
 import { ValidationStatus } from '@/components/leads/ValidationStatus';
+import { Input } from '@/components/ui/input';
 
 import {
     Select,
@@ -50,13 +51,16 @@ export default function LeadsPage() {
     const [sources, setSources] = useState<string[]>([]);
     const [selectedSource, setSelectedSource] = useState<string>('all');
     const [selectedStatus, setSelectedStatus] = useState<string>('all');
+    const [search, setSearch] = useState('');
+    const [debouncedSearch, setDebouncedSearch] = useState('');
 
-    const fetchLeads = async (pageNum: number, limit: number, source: string, status: string) => {
+    const fetchLeads = async (pageNum: number, limit: number, source: string, status: string, searchTerm: string) => {
         setLoading(true);
         try {
             const sourceParam = source !== 'all' ? `&source_domain=${source}` : '';
             const statusParam = status !== 'all' ? `&status=${status}` : '';
-            const res = await api.get(`/reports/recent?page=${pageNum}&limit=${limit}${sourceParam}${statusParam}`);
+            const searchParam = searchTerm ? `&search=${encodeURIComponent(searchTerm)}` : '';
+            const res = await api.get(`/reports/recent?page=${pageNum}&limit=${limit}${sourceParam}${statusParam}${searchParam}`);
             setLeads(res.data.items);
             setTotalLeads(res.data.total);
             setTotalPages(res.data.pages);
@@ -80,9 +84,18 @@ export default function LeadsPage() {
         fetchSources();
     }, []);
 
+    // Debounce search input
     useEffect(() => {
-        fetchLeads(page, pageSize, selectedSource, selectedStatus);
-    }, [page, pageSize, selectedSource, selectedStatus]);
+        const timer = setTimeout(() => {
+            setDebouncedSearch(search);
+            setPage(1); // Reset to first page on search
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [search]);
+
+    useEffect(() => {
+        fetchLeads(page, pageSize, selectedSource, selectedStatus, debouncedSearch);
+    }, [page, pageSize, selectedSource, selectedStatus, debouncedSearch]);
 
     if (loading && page === 1 && leads.length === 0) return <div className="p-8 text-center">Loading leads...</div>;
 
@@ -93,11 +106,11 @@ export default function LeadsPage() {
 
     return (
         <div className="space-y-6">
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
                     <h2 className="text-3xl font-bold tracking-tight text-foreground">Leads</h2>
-                    <p className="text-muted-foreground">
-                        View incoming lead traffic. Total: {totalLeads}
+                    <p className="text-muted-foreground text-sm">
+                        View incoming lead traffic. ({totalLeads} total)
                     </p>
                 </div>
                 <div className="flex items-center gap-4">
@@ -148,11 +161,22 @@ export default function LeadsPage() {
             </div>
 
             <Card className="shadow-sm overflow-hidden border-slate-200">
-                <CardHeader className="pb-3 bg-slate-50/50 border-b">
-                    <CardTitle className="text-xl">Recent Leads</CardTitle>
-                    <CardDescription>
-                        A list of leads processed by the system.
-                    </CardDescription>
+                <CardHeader className="pb-3 bg-slate-50/50 border-b flex flex-row items-center justify-between">
+                    <div>
+                        <CardTitle className="text-xl">Recent Leads</CardTitle>
+                        <CardDescription>
+                            A list of leads processed by the system.
+                        </CardDescription>
+                    </div>
+                    <div className="relative w-full md:w-72">
+                        <Search className="absolute left-2.5 top-[11px] h-3.5 w-3.5 text-muted-foreground" />
+                        <Input
+                            placeholder="ID, Email, Phone, Name..."
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            className="pl-9 h-9 text-xs border-slate-200 bg-white shadow-sm focus-visible:ring-indigo-500"
+                        />
+                    </div>
                 </CardHeader>
                 <CardContent className="p-0">
                     <div className="overflow-x-auto">
