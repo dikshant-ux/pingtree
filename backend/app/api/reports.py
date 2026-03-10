@@ -349,12 +349,47 @@ async def get_top_insights(start_date: Optional[datetime] = None, end_date: Opti
 
         coll = get_leads_collection()
 
-        # Top Buyer - Group by ID not Name for accuracy
+        # Top Buyer - Group by ID and lookup official name
         top_buyer_pipeline = [
             {"$match": {"status": "sold", **date_match}},
-            {"$group": {"_id": "$buyer_id", "name": {"$first": "$buyer_name"}, "revenue": {"$sum": "$sold_price"}}},
+            {"$group": {
+                "_id": "$buyer_id", 
+                "snapshot_name": {"$first": "$buyer_name"}, 
+                "revenue": {"$sum": "$sold_price"}
+            }},
             {"$sort": {"revenue": -1}},
-            {"$limit": 1}
+            {"$limit": 1},
+            {
+                "$addFields": {
+                    "buyer_oid": {
+                        "$cond": [
+                            {"$and": [{"$ne": ["$_id", None]}, {"$ne": ["$_id", ""]}]},
+                            {"$toObjectId": "$_id"},
+                            None
+                        ]
+                    }
+                }
+            },
+            {
+                "$lookup": {
+                    "from": "buyers",
+                    "localField": "buyer_oid",
+                    "foreignField": "_id",
+                    "as": "buyer_info"
+                }
+            },
+            {"$unwind": {"path": "$buyer_info", "preserveNullAndEmptyArrays": True}},
+            {
+                "$project": {
+                    "revenue": 1,
+                    "name": {
+                        "$ifNull": [
+                            "$buyer_info.name",
+                            {"$ifNull": ["$snapshot_name", "Unknown Buyer"]}
+                        ]
+                    }
+                }
+            }
         ]
         top_buyer_res = await coll.aggregate(top_buyer_pipeline).to_list(length=1)
         top_buyer = top_buyer_res[0] if top_buyer_res else None
