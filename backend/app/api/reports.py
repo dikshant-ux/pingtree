@@ -137,12 +137,18 @@ async def get_unique_sources():
         return []
 
 @router.get("/recent")
-async def get_recent_leads(page: int = 1, limit: int = 50, source_domain: Optional[str] = None):
+async def get_recent_leads(page: int = 1, limit: int = 50, source_domain: Optional[str] = None, status: Optional[str] = None):
     skip = (page - 1) * limit
     
     query = {}
     if source_domain and source_domain != "all":
         query["source_domain"] = source_domain
+    
+    if status and status != "all":
+        if status == "unsold":
+            query["status"] = {"$in": ["unsold", "rejected", "error"]}
+        else:
+            query["status"] = status
         
     total = await Lead.find(query).count()
     items = await Lead.find(query).sort("-created_at").skip(skip).limit(limit).to_list()

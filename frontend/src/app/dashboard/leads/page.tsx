@@ -48,12 +48,14 @@ export default function LeadsPage() {
     const [pageSize, setPageSize] = useState(20);
     const [sources, setSources] = useState<string[]>([]);
     const [selectedSource, setSelectedSource] = useState<string>('all');
+    const [selectedStatus, setSelectedStatus] = useState<string>('all');
 
-    const fetchLeads = async (pageNum: number, limit: number, source: string) => {
+    const fetchLeads = async (pageNum: number, limit: number, source: string, status: string) => {
         setLoading(true);
         try {
             const sourceParam = source !== 'all' ? `&source_domain=${source}` : '';
-            const res = await api.get(`/reports/recent?page=${pageNum}&limit=${limit}${sourceParam}`);
+            const statusParam = status !== 'all' ? `&status=${status}` : '';
+            const res = await api.get(`/reports/recent?page=${pageNum}&limit=${limit}${sourceParam}${statusParam}`);
             setLeads(res.data.items);
             setTotalLeads(res.data.total);
             setTotalPages(res.data.pages);
@@ -78,8 +80,8 @@ export default function LeadsPage() {
     }, []);
 
     useEffect(() => {
-        fetchLeads(page, pageSize, selectedSource);
-    }, [page, pageSize, selectedSource]);
+        fetchLeads(page, pageSize, selectedSource, selectedStatus);
+    }, [page, pageSize, selectedSource, selectedStatus]);
 
     if (loading && page === 1 && leads.length === 0) return <div className="p-8 text-center">Loading leads...</div>;
 
@@ -98,6 +100,21 @@ export default function LeadsPage() {
                     </p>
                 </div>
                 <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-3 bg-white p-2 rounded-lg border shadow-sm">
+                        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Status:</span>
+                        <Select value={selectedStatus} onValueChange={(val) => { setSelectedStatus(val); setPage(1); }}>
+                            <SelectTrigger className="w-[150px] h-8 text-xs font-medium border-slate-200">
+                                <SelectValue placeholder="All Status" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all" className="text-xs font-bold text-indigo-600">All Status</SelectItem>
+                                <SelectItem value="sold" className="text-xs text-emerald-600 font-semibold">Sold</SelectItem>
+                                <SelectItem value="unsold" className="text-xs text-rose-600 font-semibold">Unsold</SelectItem>
+                                <SelectItem value="Invalid Lead" className="text-xs text-slate-400">Invalid Lead</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+
                     <div className="flex items-center gap-3 bg-white p-2 rounded-lg border shadow-sm">
                         <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Source:</span>
                         <Select value={selectedSource} onValueChange={(val) => { setSelectedSource(val); setPage(1); }}>

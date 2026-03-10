@@ -38,7 +38,7 @@ class ValidatorService:
                 "Origin": "https://pingtree.vellko.com/",
                 "Referer": "https://pingtree.vellko.com/"
             }
-            async with httpx.AsyncClient(timeout=5.0) as client:
+            async with httpx.AsyncClient(timeout=20.0) as client:
                 if config.method.upper() == "GET":
                     response = await client.get(config.api_url, params=params, headers=headers)
                 else:
@@ -56,8 +56,8 @@ class ValidatorService:
                 if response.status_code != 200:
                     logger.error(f"Validator API returned status {response.status_code}: {response.text}")
                     # In case of API error, we might decide to fail-safe (accept) or fail-secure (reject)
-                    # For now, let's accept to avoid blocking business if the validator is down
-                    return True, {"error": f"API returned {response.status_code}", "body": result}
+                    # For now, let's reject if the validator is down
+                    return False, {"error": f"API returned {response.status_code}", "body": result}
 
                 
                 # 3. Evaluate Success Criteria
@@ -72,6 +72,6 @@ class ValidatorService:
         except Exception as e:
             logger.error(f"Error during lead validation: {str(e)}")
             # Fail-safe: if validator service is down, let the lead through
-            return True, {"error": str(e)}
+            return False, {"error": str(e)}
 
 validator_service = ValidatorService()
