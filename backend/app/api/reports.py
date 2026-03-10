@@ -285,3 +285,117 @@ async def get_outcome_stats(start_date: Optional[datetime] = None, end_date: Opt
     except Exception as e:
         logger.error(f"Error in get_outcome_stats: {str(e)}", exc_info=True)
         return {"data": [], "error": str(e)}
+
+@router.get("/buyer-detailed")
+async def get_buyer_detailed(start_date: Optional[datetime] = None, end_date: Optional[datetime] = None) -> Dict[str, Any]:
+    try:
+        match_stage = {"status": LeadStatus.SOLD}
+        date_match = get_date_match(start_date, end_date)
+        if date_match:
+            match_stage.update(date_match)
+
+        pipeline = [
+            {"$match": match_stage},
+            {
+                "$group": {
+                    "_id": {
+                        "buyer_id": "$buyer_id",
+                        "year": {"$year": "$created_at"},
+                        "month": {"$month": "$created_at"},
+                        "day": {"$dayOfMonth": "$created_at"}
+                    },
+                    "buyer_name": {"$first": "$buyer_name"},
+                    "revenue": {"$sum": "$sold_price"},
+                    "count": {"$sum": 1}
+                }
+            },
+            {
+                "$group": {
+                    "_id": "$_id.buyer_id",
+                    "buyer_name": {"$first": "$buyer_name"},
+                    "total_revenue": {"$sum": "$revenue"},
+                    "total_count": {"$sum": "$count"},
+                    "daily_stats": {
+                        "$push": {
+                            "date": {
+                                "$dateFromParts": {
+                                    "year": "$_id.year",
+                                    "month": "$_id.month",
+                                    "day": "$_id.day"
+                                }
+                            },
+                            "revenue": "$revenue",
+                            "count": "$count"
+                        }
+                    }
+                }
+            },
+            {"$sort": {"total_revenue": -1}}
+        ]
+        coll = get_leads_collection()
+        data = await coll.aggregate(pipeline).to_list(length=None)
+        return {"data": data}
+    except Exception as e:
+        logger.error(f"Error in get_buyer_detailed: {str(e)}", exc_info=True)
+        return {"data": [], "error": str(e)}
+
+@router.get("/top-insights")
+async def get_top_insights(start_date: Optional[datetime] = None, end_date: Optional[datetime] = None) -> Dict[str, Any]:
+    try:
+        match_stage = {"status": LeadStatus.SOLD}
+        date_match = get_date_match(start_date, end_date)
+        if date_match:
+            match_stage.update(date_match)
+
+        coll = get_leads_collection()
+
+        # Top Buyer
+        top_buyer_pipeline = [
+            {"$match": match_stage},
+            {"$group": {"_id": "$buyer_name", "revenue": {"$sum": "$sold_price"}}},
+            {"$sort": {"revenue": -1}},
+            {"$limit": 1}
+        ]
+        top_buyer_res = await coll.aggregate(top_buyer_pipeline).to_list(length=1)
+        top_buyer = top_buyer_res[0] if top_buyer_res else None
+
+        # Top Source
+        top_source_pipeline = [
+            {"$match": match_stage},
+            {"$group": {"_id": "$source_domain", "revenue": {"$sum": "$sold_price"}}},
+            {"$sort": {"revenue": -1}},
+            {"$limit": 1}
+        ]
+        top_source_res = await coll.aggregate(top_source_pipeline).to_list(length=1)
+        top_source = top_source_res[0] if top_source_res else None
+
+        # Best Day
+        best_day_pipeline = [
+            {"$match": match_stage},
+            {
+                "$group": {
+                    "_id": {
+                        "year": {"$year": "$created_at"},
+                        "month": {"$month": "$created_at"},
+                        "day": {"$dayOfMonth": "$created_at"}
+                    },
+                    "revenue": {"$sum": "$sold_price"}
+                }
+            },
+            {"$sort": {"revenue": -1}},
+            {"$limit": 1}
+        ]
+        best_day_res = await coll.aggregate(best_day_pipeline).to_list(length=1)
+        best_day = best_day_res[0] if best_day_res else None
+
+        return {
+            "top_buyer": top_buyer["_id"] if top_buyer else "N/A",
+            "top_buyer_revenue": top_buyer["revenue"] if top_buyer else 0,
+            "top_source": top_source["_id"] if top_source else "N/A",
+            "top_source_revenue": top_source["revenue"] if top_source else 0,
+            "best_day": f"{best_day['_id']['year']}-{best_day['_id']['month']}-{best_day['_id']['day']}" if best_day else "N/A",
+            "best_day_revenue": best_day["revenue"] if best_day else 0
+        }
+    except Exception as e:
+        logger.error(f"Error in get_top_insights: {str(e)}", exc_info=True)
+        return {}
