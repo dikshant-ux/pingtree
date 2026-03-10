@@ -97,7 +97,12 @@ async def get_today_stats() -> Dict[str, Any]:
 @router.get("/activity")
 async def get_activity_stats() -> Dict[str, Any]:
     try:
+        # Last 24 hours only
+        from datetime import timedelta
+        since = datetime.utcnow() - timedelta(hours=24)
+        
         pipeline = [
+            {"$match": {"created_at": {"$gte": since}}},
             {
                 "$group": {
                     "_id": {

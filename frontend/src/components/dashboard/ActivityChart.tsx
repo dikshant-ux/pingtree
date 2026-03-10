@@ -21,33 +21,53 @@ export default function ActivityChart() {
                 const res = await api.get('/reports/activity');
                 const rawData = res.data.data;
 
-                // Process raw sparse data into granular time series (e.g. last 24h)
-                // For now, we'll just map the raw buckets to a displayable format
-                // In a real prod app, we'd fill in the zero-hours.
+                // Create a map of the last 24 hours
+                const now = new Date();
+                const series: ActivityDataPoint[] = [];
 
-                const statsMap: Record<string, any> = {};
+                for (let i = 23; i >= 0; i--) {
+                    const d = new Date(now.getTime() - i * 60 * 60 * 1000);
+                    d.setMinutes(0, 0, 0);
 
-                rawData.forEach((item: any) => {
-                    // Item ID: {year, month, day, hour, status}
-                    const d = item._id;
-                    const dateObj = new Date(Date.UTC(d.year, d.month - 1, d.day, d.hour));
-                    const label = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    const year = d.getUTCFullYear();
+                    const month = d.getUTCMonth() + 1;
+                    const day = d.getUTCDate();
+                    const hour = d.getUTCHours();
 
-                    if (!statsMap[label]) {
-                        statsMap[label] = { time: label, total: 0, sold: 0, rejected: 0 };
-                    }
+                    const match = rawData.find((item: any) =>
+                        item._id.year === year &&
+                        item._id.month === month &&
+                        item._id.day === day &&
+                        item._id.hour === hour
+                    );
 
-                    statsMap[label].total += item.count;
-                    if (d.status === 'sold') statsMap[label].sold += item.count;
-                    else if (d.status === 'rejected') statsMap[label].rejected += item.count;
-                });
+                    // Find statuses for this hour
+                    const hourData = rawData.filter((item: any) =>
+                        item._id.year === year &&
+                        item._id.month === month &&
+                        item._id.day === day &&
+                        item._id.hour === hour
+                    );
 
-                // Convert map to array and sort by time (this is tricky with just time strings, 
-                // but if we receive data sorted from backend it helps. 
-                // Currently backend sorts by ID components.
+                    let total = 0;
+                    let sold = 0;
+                    let rejected = 0;
 
-                const processedData = Object.values(statsMap);
-                setData(processedData);
+                    hourData.forEach((item: any) => {
+                        total += item.count;
+                        if (item._id.status === 'sold') sold += item.count;
+                        else if (item._id.status === 'rejected' || item._id.status === 'invalid') rejected += item.count;
+                    });
+
+                    series.push({
+                        time: d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                        total,
+                        sold,
+                        rejected
+                    });
+                }
+
+                setData(series);
             } catch (err) {
                 console.error("Failed to load activity", err);
             } finally {
