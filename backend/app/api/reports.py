@@ -349,10 +349,10 @@ async def get_top_insights(start_date: Optional[datetime] = None, end_date: Opti
 
         coll = get_leads_collection()
 
-        # Top Buyer
+        # Top Buyer - Group by ID not Name for accuracy
         top_buyer_pipeline = [
-            {"$match": match_stage},
-            {"$group": {"_id": "$buyer_name", "revenue": {"$sum": "$sold_price"}}},
+            {"$match": {"status": "sold", **date_match}},
+            {"$group": {"_id": "$buyer_id", "name": {"$first": "$buyer_name"}, "revenue": {"$sum": "$sold_price"}}},
             {"$sort": {"revenue": -1}},
             {"$limit": 1}
         ]
@@ -361,7 +361,7 @@ async def get_top_insights(start_date: Optional[datetime] = None, end_date: Opti
 
         # Top Source
         top_source_pipeline = [
-            {"$match": match_stage},
+            {"$match": {"status": "sold", **date_match}},
             {"$group": {"_id": "$source_domain", "revenue": {"$sum": "$sold_price"}}},
             {"$sort": {"revenue": -1}},
             {"$limit": 1}
@@ -389,7 +389,7 @@ async def get_top_insights(start_date: Optional[datetime] = None, end_date: Opti
         best_day = best_day_res[0] if best_day_res else None
 
         return {
-            "top_buyer": top_buyer["_id"] if top_buyer else "N/A",
+            "top_buyer": top_buyer["name"] if top_buyer and top_buyer.get("name") else (top_buyer["_id"] if top_buyer else "N/A"),
             "top_buyer_revenue": top_buyer["revenue"] if top_buyer else 0,
             "top_source": top_source["_id"] if top_source else "N/A",
             "top_source_revenue": top_source["revenue"] if top_source else 0,
