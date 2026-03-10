@@ -248,27 +248,40 @@ async def get_buyer_stats(start_date: Optional[datetime] = None, end_date: Optio
         logger.error(f"Error in get_buyer_stats: {str(e)}", exc_info=True)
         return {"data": [], "error": str(e)}
 
-@router.get("/errors")
-async def get_error_stats(start_date: Optional[datetime] = None, end_date: Optional[datetime] = None) -> Dict[str, Any]:
+@router.get("/outcomes")
+async def get_outcome_stats(start_date: Optional[datetime] = None, end_date: Optional[datetime] = None) -> Dict[str, Any]:
     try:
-        match_stage = {"status": {"$in": [LeadStatus.REJECTED, LeadStatus.INVALID, LeadStatus.ERROR]}}
         date_match = get_date_match(start_date, end_date)
-        if date_match:
-            match_stage.update(date_match)
+        match_stage = date_match if date_match else {}
             
         pipeline = [
             {"$match": match_stage},
             {
+                "$project": {
+                    "outcome": {
+                        "$cond": [
+                            {"$eq": ["$status", "sold"]},
+                            "Sold",
+                            {"$cond": [
+                                {"$eq": ["$status", "Invalid Lead"]},
+                                "Invalid Lead",
+                                "Unsold"
+                            ]}
+                        ]
+                    }
+                }
+            },
+            {
                 "$group": {
-                    "_id": "$status",
+                    "_id": "$outcome",
                     "count": {"$sum": 1}
                 }
             }
         ]
-        # UNIVERSAL FIX: Use direct Motor collection to avoid Beanie version conflicts
+        
         coll = get_leads_collection()
         data = await coll.aggregate(pipeline).to_list(length=None)
         return {"data": data}
     except Exception as e:
-        logger.error(f"Error in get_error_stats: {str(e)}", exc_info=True)
+        logger.error(f"Error in get_outcome_stats: {str(e)}", exc_info=True)
         return {"data": [], "error": str(e)}
