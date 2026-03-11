@@ -50,20 +50,17 @@ export default function LeadsPage() {
     const [pageSize, setPageSize] = useState(20);
     const [sources, setSources] = useState<string[]>([]);
     const [selectedSource, setSelectedSource] = useState<string>('all');
-    const [domains, setDomains] = useState<string[]>([]);
-    const [selectedDomain, setSelectedDomain] = useState<string>('all');
     const [selectedStatus, setSelectedStatus] = useState<string>('all');
     const [search, setSearch] = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
 
-    const fetchLeads = async (pageNum: number, limit: number, source: string, domain: string, status: string, searchTerm: string) => {
+    const fetchLeads = async (pageNum: number, limit: number, source: string, status: string, searchTerm: string) => {
         setLoading(true);
         try {
-            const sourceParam = source !== 'all' ? `&source=${source}` : '';
-            const domainParam = domain !== 'all' ? `&source_domain=${domain}` : '';
+            const sourceParam = source !== 'all' ? `&source_domain=${source}` : '';
             const statusParam = status !== 'all' ? `&status=${status}` : '';
             const searchParam = searchTerm ? `&search=${encodeURIComponent(searchTerm)}` : '';
-            const res = await api.get(`/reports/recent?page=${pageNum}&limit=${limit}${sourceParam}${domainParam}${statusParam}${searchParam}`);
+            const res = await api.get(`/reports/recent?page=${pageNum}&limit=${limit}${sourceParam}${statusParam}${searchParam}`);
             setLeads(res.data.items);
             setTotalLeads(res.data.total);
             setTotalPages(res.data.pages);
@@ -77,8 +74,7 @@ export default function LeadsPage() {
     const fetchSources = async () => {
         try {
             const res = await api.get('/reports/sources');
-            setSources(res.data.sources || []);
-            setDomains(res.data.domains || []);
+            setSources(res.data);
         } catch (err) {
             console.error("Failed to fetch sources", err);
         }
@@ -98,8 +94,8 @@ export default function LeadsPage() {
     }, [search]);
 
     useEffect(() => {
-        fetchLeads(page, pageSize, selectedSource, selectedDomain, selectedStatus, debouncedSearch);
-    }, [page, pageSize, selectedSource, selectedDomain, selectedStatus, debouncedSearch]);
+        fetchLeads(page, pageSize, selectedSource, selectedStatus, debouncedSearch);
+    }, [page, pageSize, selectedSource, selectedStatus, debouncedSearch]);
 
     if (loading && page === 1 && leads.length === 0) return <div className="p-8 text-center">Loading leads...</div>;
 
@@ -110,20 +106,18 @@ export default function LeadsPage() {
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
                     <h2 className="text-3xl font-bold tracking-tight text-foreground">Leads</h2>
                     <p className="text-muted-foreground text-sm">
                         View incoming lead traffic. ({totalLeads} total)
                     </p>
                 </div>
-
-                <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row flex-wrap items-end gap-5">
-
-                    <div className="flex flex-col gap-1.5 w-full md:w-auto">
-                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Status</label>
+                <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-3 bg-white p-2 rounded-lg border shadow-sm">
+                        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Status:</span>
                         <Select value={selectedStatus} onValueChange={(val) => { setSelectedStatus(val); setPage(1); }}>
-                            <SelectTrigger className="w-full md:w-[150px] h-9 bg-white border-slate-200 text-xs shadow-sm shadow-black/5">
+                            <SelectTrigger className="w-[150px] h-8 text-xs font-medium border-slate-200">
                                 <SelectValue placeholder="All Status" />
                             </SelectTrigger>
                             <SelectContent>
@@ -135,10 +129,10 @@ export default function LeadsPage() {
                         </Select>
                     </div>
 
-                    <div className="flex flex-col gap-1.5 w-full md:w-auto">
-                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Source Field</label>
+                    <div className="flex items-center gap-3 bg-white p-2 rounded-lg border shadow-sm">
+                        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Source:</span>
                         <Select value={selectedSource} onValueChange={(val) => { setSelectedSource(val); setPage(1); }}>
-                            <SelectTrigger className="w-full md:w-[180px] h-9 bg-white border-slate-200 text-xs shadow-sm shadow-black/5">
+                            <SelectTrigger className="w-[180px] h-8 text-xs font-medium border-slate-200">
                                 <SelectValue placeholder="All Sources" />
                             </SelectTrigger>
                             <SelectContent>
@@ -150,25 +144,10 @@ export default function LeadsPage() {
                         </Select>
                     </div>
 
-                    <div className="flex flex-col gap-1.5 w-full md:w-auto">
-                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Source Domain</label>
-                        <Select value={selectedDomain} onValueChange={(val) => { setSelectedDomain(val); setPage(1); }}>
-                            <SelectTrigger className="w-full md:w-[180px] h-9 bg-white border-slate-200 text-xs shadow-sm shadow-black/5">
-                                <SelectValue placeholder="All Domains" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all" className="text-xs font-bold text-indigo-600">All Domains</SelectItem>
-                                {domains.map(d => (
-                                    <SelectItem key={d} value={d} className="text-xs">{d}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    <div className="flex flex-col gap-1.5 w-full md:w-[100px] md:ml-auto">
-                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Per Page</label>
+                    <div className="flex items-center gap-3 bg-white p-2 rounded-lg border shadow-sm">
+                        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Per Page:</span>
                         <Select value={pageSize.toString()} onValueChange={handlePageSizeChange}>
-                            <SelectTrigger className="w-full md:w-[100px] h-9 bg-white border-slate-200 text-xs shadow-sm shadow-black/5">
+                            <SelectTrigger className="w-[80px] h-8 text-xs font-medium border-slate-200">
                                 <SelectValue placeholder="Size" />
                             </SelectTrigger>
                             <SelectContent>
@@ -256,8 +235,8 @@ export default function LeadsPage() {
                                             </TableCell>
                                             <TableCell>
                                                 <div className="flex flex-col gap-1.5">
-                                                    <span className="text-[10px] bg-indigo-50 px-2 py-0.5 rounded-full text-indigo-700 font-bold truncate max-w-[140px] border border-indigo-100 shadow-sm" title={lead.lead_data?.source || lead.source_domain}>
-                                                        {lead.lead_data?.source || lead.source_domain || 'Internal'}
+                                                    <span className="text-[10px] bg-indigo-50 px-2 py-0.5 rounded-full text-indigo-700 font-bold truncate max-w-[140px] border border-indigo-100 shadow-sm" title={lead.source_domain}>
+                                                        {lead.source_domain || 'Internal'}
                                                     </span>
                                                     {lead.trusted_form_url && (
                                                         <a
