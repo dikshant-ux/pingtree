@@ -4,6 +4,7 @@ from app.core.config import settings
 from app.api.api import api_router
 from app.db.mongodb import init_db
 from app.db.redis import redis_client
+from app.core.http_client import http_client_manager
 
 app = FastAPI(
     title="Ping Tree Distribution API",
@@ -69,6 +70,7 @@ async def startup_event():
 async def shutdown_event():
     logger.info("🛑 Shutting down...")
     await redis_client.close()
+    await http_client_manager.close()
 
 @app.get("/")
 async def root():

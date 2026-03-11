@@ -26,7 +26,7 @@ class AuctionEngine:
         start_time = time.time()
         trace = []
         
-        def add_trace(stage: str, status: str, buyer_id: str = None, buyer_name: str = None, details: str = None, raw_response: Any = None):
+        def add_trace(stage: str, status: str, buyer_id: str = None, buyer_name: str = None, details: str = None, raw_response: Any = None, request_payload: Any = None):
             trace.append({
                 "timestamp": datetime.utcnow().isoformat(),
                 "stage": stage,
@@ -34,7 +34,8 @@ class AuctionEngine:
                 "buyer_id": buyer_id,
                 "buyer_name": buyer_name,
                 "details": details,
-                "raw_response": raw_response
+                "raw_response": raw_response,
+                "request_payload": request_payload
             })
 
         add_trace("Ingestion", "Received", details="Auction started")
@@ -110,10 +111,10 @@ class AuctionEngine:
             # 2. Parallel Ping for Ping & Post Candidates
             if ping_tasks := [self.ping_safe(b, lead_data, metadata=metadata) for b in ping_candidates]:
                 results = await asyncio.gather(*ping_tasks)
-                for buyer, success, price, redirect, reason, context, raw_data in results:
+                for buyer, success, price, redirect, reason, context, raw_data, req_payload in results:
                     if success:
                         score = RankingEngine.calculate_score(buyer, price)
-                        add_trace("Ping", "Accepted", str(buyer.id), buyer.name, f"Price: ${price}, Score: {score}", raw_response=raw_data)
+                        add_trace("Ping", "Accepted", str(buyer.id), buyer.name, f"Price: ${price}, Score: {score}", raw_response=raw_data, request_payload=req_payload)
                         accepted_bids.append({
                             "buyer": buyer,
                             "price": price,
@@ -123,7 +124,7 @@ class AuctionEngine:
                             "raw_data": raw_data
                         })
                     else:
-                        add_trace("Ping", "Rejected", str(buyer.id), buyer.name, reason, raw_response=raw_data)
+                        add_trace("Ping", "Rejected", str(buyer.id), buyer.name, reason, raw_response=raw_data, request_payload=req_payload)
 
             if not accepted_bids:
                 add_trace("Auction", f"Tier {tier_level} Failed", details="No accepted bids in this tier")
@@ -141,9 +142,9 @@ class AuctionEngine:
                 final_redirect = bid["redirect"]
                 
                 if (buyer.type == "ping_post" and buyer.post_url) or buyer.type in ["full_post", "redirect"]:
-                    success, post_price, post_redirect, post_reason, post_data = await self.buyer_client.post_buyer(buyer, lead_data, context=context, metadata=metadata)
+                    success, post_price, post_redirect, post_reason, post_data, post_payload = await self.buyer_client.post_buyer(buyer, lead_data, context=context, metadata=metadata)
                     if not success:
-                        add_trace("Post", "Failed", str(buyer.id), buyer.name, f"Post request failed: {post_reason}", raw_response=post_data)
+                        add_trace("Post", "Failed", str(buyer.id), buyer.name, f"Post request failed: {post_reason}", raw_response=post_data, request_payload=post_payload)
                         continue # Failover to next in this tier
                     
                     # Update with dynamic price if supplied in post response
@@ -154,7 +155,7 @@ class AuctionEngine:
                     if post_redirect:
                         final_redirect = post_redirect
                     
-                    add_trace("Post", "Success", str(buyer.id), buyer.name, "Lead sold", raw_response=post_data)
+                    add_trace("Post", "Success", str(buyer.id), buyer.name, "Lead sold", raw_response=post_data, request_payload=post_payload)
                 
                 # SOLD
                 lead = await self.create_lead(lead_data, LeadStatus.SOLD, trace, start_time, metadata)
@@ -184,10 +185,10 @@ class AuctionEngine:
 
     async def ping_safe(self, buyer: Buyer, lead_data: Dict[str, Any], metadata: Dict[str, Any] = {}):
         try:
-            success, price, redirect, reason, context, raw_data = await self.buyer_client.ping_buyer(buyer, lead_data, metadata=metadata)
-            return buyer, success, price, redirect, reason, context, raw_data
+            success, price, redirect, reason, context, raw_data, payload = await self.buyer_client.ping_buyer(buyer, lead_data, metadata=metadata)
+            return buyer, success, price, redirect, reason, context, raw_data, payload
         except Exception as e:
-            return buyer, False, 0.0, None, str(e), {}, None
+            return buyer, False, 0.0, None, str(e), {}, None, {}
 
     async def create_lead(self, data: Dict[str, Any], status, trace: List, start_time: float = None, metadata: Dict[str, Any] = {}):
         try:

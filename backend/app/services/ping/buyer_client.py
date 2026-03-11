@@ -3,13 +3,14 @@ import logging
 from typing import Dict, Any, Tuple, Optional
 from app.models.buyer import Buyer, BuyerStatus
 from app.services.domain_service import domain_service
+from app.core.http_client import http_client_manager
 
 logger = logging.getLogger(__name__)
 
 class BuyerClient:
-    async def ping_buyer(self, buyer: Buyer, lead_data: Dict[str, Any], metadata: Dict[str, Any] = {}) -> Tuple[bool, float, Optional[str], str, Dict[str, Any], Optional[Dict]]:
+    async def ping_buyer(self, buyer: Buyer, lead_data: Dict[str, Any], metadata: Dict[str, Any] = {}) -> Tuple[bool, float, Optional[str], str, Dict[str, Any], Optional[Dict], Dict[str, Any]]:
         """
-        Returns (Success, Price, Redirect, Reason, Context, RawData)
+        Returns (Success, Price, Redirect, Reason, Context, RawData, RequestPayload)
         Context is data extracted from response (e.g. Lead_ID) to be used in Post.
         """
         # Feature: Separate Ping Mapping
@@ -36,42 +37,42 @@ class BuyerClient:
         headers = buyer.headers or {}
         
         try:
-            async with httpx.AsyncClient() as client:
-                response = await client.post(url, json=payload, headers=headers, timeout=timeout)
-                success, price, redirect, reason, raw_data = self.parse_response(buyer, response)
-                
-                # Extract Context
-                context = {}
-                print(f"DEBUG INFO: Success={success}, HasRules={bool(buyer.context_extraction)}, HasData={bool(raw_data)}")
-                if buyer.context_extraction:
-                    print(f"DEBUG Rules: {buyer.context_extraction}")
-                
-                if success and buyer.context_extraction and raw_data:
-                    print(f"DEBUG: Extracting context from rules: {buyer.context_extraction}")
-                    print(f"DEBUG: Raw Data: {raw_data}")
-                    for rule in buyer.context_extraction:
-                        val = self.get_nested(raw_data, rule.response_field)
-                        print(f"DEBUG: Rule {rule.response_field} -> {val}")
-                        if val is not None:
-                            context[rule.context_key] = val
-                print(f"DEBUG: Final Context: {context}")
-                            
-                return success, price, redirect, reason, context, raw_data
+            client = http_client_manager.get_client()
+            response = await client.post(url, json=payload, headers=headers, timeout=timeout)
+            success, price, redirect, reason, raw_data = self.parse_response(buyer, response)
+            
+            # Extract Context
+            context = {}
+            print(f"DEBUG INFO: Success={success}, HasRules={bool(buyer.context_extraction)}, HasData={bool(raw_data)}")
+            if buyer.context_extraction:
+                print(f"DEBUG Rules: {buyer.context_extraction}")
+            
+            if success and buyer.context_extraction and raw_data:
+                print(f"DEBUG: Extracting context from rules: {buyer.context_extraction}")
+                print(f"DEBUG: Raw Data: {raw_data}")
+                for rule in buyer.context_extraction:
+                    val = self.get_nested(raw_data, rule.response_field)
+                    print(f"DEBUG: Rule {rule.response_field} -> {val}")
+                    if val is not None:
+                        context[rule.context_key] = val
+            print(f"DEBUG: Final Context: {context}")
+                        
+            return success, price, redirect, reason, context, raw_data, payload
                 
         except httpx.TimeoutException:
-            return False, 0.0, None, "Connection Timeout", {}, None
+            return False, 0.0, None, "Connection Timeout", {}, None, payload if 'payload' in locals() else {}
         except httpx.ReadTimeout:
-            return False, 0.0, None, "Read Timeout (Buyer took too long)", {}, None
+            return False, 0.0, None, "Read Timeout (Buyer took too long)", {}, None, payload if 'payload' in locals() else {}
         except Exception as e:
             logger.error(f"Ping error for {buyer.name}: {e}")
-            return False, 0.0, None, f"Error: {repr(e)}", {}, None
+            return False, 0.0, None, f"Error: {repr(e)}", {}, None, payload if 'payload' in locals() else {}
 
-    async def post_buyer(self, buyer: Buyer, lead_data: Dict[str, Any], context: Dict[str, Any] = {}, metadata: Dict[str, Any] = {}) -> Tuple[bool, float, Optional[str], str, Optional[Dict]]:
+    async def post_buyer(self, buyer: Buyer, lead_data: Dict[str, Any], context: Dict[str, Any] = {}, metadata: Dict[str, Any] = {}) -> Tuple[bool, float, Optional[str], str, Optional[Dict], Dict[str, Any]]:
         """
-        Returns (Success, Price, RedirectURL, Reason, Data)
+        Returns (Success, Price, RedirectURL, Reason, Data, RequestPayload)
         """
         if not buyer.post_url:
-            return True, buyer.payout, None, "Success (No Post URL)", {} # Return 5-tuple
+            return True, buyer.payout, None, "Success (No Post URL)", {}, {} # Return 6-tuple
             
         # Feature: Separate Post Mapping
         mapping = buyer.post_mapping if buyer.post_mapping else buyer.field_mapping
@@ -103,17 +104,17 @@ class BuyerClient:
         headers = buyer.headers or {}
         
         try:
-            async with httpx.AsyncClient() as client:
-                response = await client.post(url, json=payload, headers=headers, timeout=timeout)
-                success, price, redirect, reason, data = self.parse_response(buyer, response)
-                return success, price, redirect, reason, data
+            client = http_client_manager.get_client()
+            response = await client.post(url, json=payload, headers=headers, timeout=timeout)
+            success, price, redirect, reason, data = self.parse_response(buyer, response)
+            return success, price, redirect, reason, data, payload
         except httpx.TimeoutException:
-            return False, 0.0, None, "Connection Timeout", {}
+            return False, 0.0, None, "Connection Timeout", {}, payload if 'payload' in locals() else {}
         except httpx.ReadTimeout:
-            return False, 0.0, None, "Read Timeout (Buyer took too long)", {}
+            return False, 0.0, None, "Read Timeout (Buyer took too long)", {}, payload if 'payload' in locals() else {}
         except Exception as e:
             logger.exception(f"Post failed for {buyer.name}: {e}")
-            return False, 0.0, None, f"Error: {repr(e)}", {}
+            return False, 0.0, None, f"Error: {repr(e)}", {}, payload if 'payload' in locals() else {}
 
     def transform_payload(self, lead_data: Dict[str, Any], mapping: list) -> Dict[str, Any]:
         if not mapping:

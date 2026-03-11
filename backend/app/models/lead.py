@@ -43,3 +43,14 @@ class Lead(Document):
 
     class Settings:
         name = "leads"
+        indexes = [
+            # Speeds up dashboard queries and recent leads
+            "created_at",
+            "status",
+            "buyer_id",
+            "source_domain",
+            
+            # Compound index for common reporting queries (e.g. leads by status over time)
+            [("status", 1), ("created_at", -1)],
+            [("buyer_id", 1), ("created_at", -1)]
+        ]

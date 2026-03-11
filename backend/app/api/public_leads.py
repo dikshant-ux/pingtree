@@ -124,11 +124,12 @@ async def public_ingest_lead(
     any_invalid = False
     
     for config in validation_configs:
-        is_valid, resp_body = await validator_service.validate_lead(config, lead_data, metadata=metadata)
+        is_valid, resp_body, req_payload = await validator_service.validate_lead(config, lead_data, metadata=metadata)
         
         validation_results.append({
             "validator_name": config.name,
             "success": is_valid,
+            "request_payload": req_payload,
             "response_body": resp_body,
             "timestamp": datetime.utcnow().isoformat()
         })

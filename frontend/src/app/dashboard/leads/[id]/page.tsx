@@ -125,13 +125,70 @@ export default function LeadDetailsPage({ params }: { params: Promise<{ id: stri
                     {lead.validation_results && lead.validation_results.length > 0 && (
                         <Card>
                             <CardHeader>
-                                <CardTitle>Raw Validation Results</CardTitle>
-                                <CardDescription>Full response from external validators.</CardDescription>
+                                <CardTitle>Validator Logs</CardTitle>
+                                <CardDescription>Individual request and response payloads.</CardDescription>
                             </CardHeader>
-                            <CardContent>
-                                <pre className="bg-slate-900 text-slate-100 p-4 rounded-lg text-[10px] font-mono overflow-auto max-h-[400px]">
-                                    {JSON.stringify(lead.validation_results, null, 2)}
-                                </pre>
+                            <CardContent className="space-y-6">
+                                {lead.validation_results.map((res: any, idx: number) => (
+                                    <div key={idx} className="border rounded-md p-4 space-y-3">
+                                        <div className="flex items-center justify-between">
+                                            <span className="font-semibold text-sm">{res.validator_name}</span>
+                                            <Badge variant={res.success ? 'default' : 'destructive'}>{res.success ? 'Success' : 'Failed'}</Badge>
+                                        </div>
+                                        <div className="flex flex-col gap-4">
+                                            <div>
+                                                <span className="text-xs text-muted-foreground font-semibold mb-1 block">REQUEST</span>
+                                                <pre className="bg-slate-900 text-slate-100 p-3 rounded-md text-[10px] font-mono overflow-auto max-h-[200px] whitespace-pre-wrap break-all">
+                                                    {res.request_payload ? JSON.stringify(res.request_payload, null, 2) : 'No payload sent'}
+                                                </pre>
+                                            </div>
+                                            <div>
+                                                <span className="text-xs text-muted-foreground font-semibold mb-1 block">RESPONSE</span>
+                                                <pre className="bg-slate-900 text-slate-100 p-3 rounded-md text-[10px] font-mono overflow-auto max-h-[200px] whitespace-pre-wrap break-all">
+                                                    {res.response_body ? JSON.stringify(res.response_body, null, 2) : 'No response'}
+                                                </pre>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </CardContent>
+                        </Card>
+                    )}
+
+                    {lead.trace && lead.trace.filter((t: any) => (t.stage === 'Ping' || t.stage === 'Post') && (t.request_payload || t.raw_response)).length > 0 && (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Buyer Logs</CardTitle>
+                                <CardDescription>Ping and Post request/response payloads.</CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-6">
+                                {lead.trace
+                                    .filter((t: any) => (t.stage === 'Ping' || t.stage === 'Post') && (t.request_payload || t.raw_response))
+                                    .map((t: any, idx: number) => (
+                                        <div key={idx} className="border rounded-md p-4 space-y-3">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-2">
+                                                    <Badge variant="outline">{t.stage}</Badge>
+                                                    <span className="font-semibold text-sm">{t.buyer_name || t.buyer_id}</span>
+                                                </div>
+                                                <Badge variant={t.status.includes('Accept') || t.status.includes('Success') ? 'default' : 'destructive'}>{t.status}</Badge>
+                                            </div>
+                                            <div className="flex flex-col gap-4">
+                                                <div>
+                                                    <span className="text-xs text-muted-foreground font-semibold mb-1 block">REQUEST PAYLOAD</span>
+                                                    <pre className="bg-slate-900 text-slate-100 p-3 rounded-md text-[10px] font-mono overflow-auto max-h-[300px] whitespace-pre-wrap break-all">
+                                                        {t.request_payload && Object.keys(t.request_payload).length > 0 ? JSON.stringify(t.request_payload, null, 2) : 'No payload recorded'}
+                                                    </pre>
+                                                </div>
+                                                <div>
+                                                    <span className="text-xs text-muted-foreground font-semibold mb-1 block">RAW RESPONSE</span>
+                                                    <pre className="bg-slate-900 text-slate-100 p-3 rounded-md text-[10px] font-mono overflow-auto max-h-[300px] whitespace-pre-wrap break-all">
+                                                        {t.raw_response ? JSON.stringify(t.raw_response, null, 2) : 'No response recorded'}
+                                                    </pre>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
                             </CardContent>
                         </Card>
                     )}
