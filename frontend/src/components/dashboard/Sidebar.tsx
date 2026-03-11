@@ -26,11 +26,14 @@ import {
 } from "@/components/ui/tooltip"
 import { LayoutDashboard, Users, BarChart3, PanelLeftClose, PanelLeftOpen, LogOut, User, Settings, List, GitBranch, Terminal, ShieldCheck } from 'lucide-react'
 
-interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> { }
+interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
+    isMobile?: boolean;
+}
 
-export function Sidebar({ className }: SidebarProps) {
+export function Sidebar({ className, isMobile }: SidebarProps) {
     const pathname = usePathname()
     const [collapsed, setCollapsed] = React.useState(false)
+    const isCollapsed = collapsed && !isMobile;
     const [user, setUser] = React.useState<{ email: string; role: string } | null>(null)
 
     React.useEffect(() => {
@@ -66,13 +69,14 @@ export function Sidebar({ className }: SidebarProps) {
 
     return (
         <div className={cn(
-            "relative z-10 flex flex-col border-r bg-card transition-all duration-300 shadow-xl",
-            collapsed ? "w-16" : "w-64",
+            "relative flex flex-col bg-card transition-all duration-300",
+            !isMobile && "z-10 border-r shadow-xl",
+            !isMobile && (isCollapsed ? "w-16" : "w-64"),
             className
         )}>
             {/* Header / Logo */}
-            <div className={cn("flex h-16 items-center border-b px-4", collapsed ? "justify-center" : "justify-between")}>
-                {!collapsed && (
+            <div className={cn("flex h-16 items-center border-b px-4", isCollapsed ? "justify-center" : "justify-between")}>
+                {!isCollapsed && (
                     <div className="flex items-center gap-2">
                         <img src="/logo.svg" alt="PingTree Logo" className="w-8 h-8 object-contain" />
                         <span className="text-xl font-bold bg-gradient-to-r from-indigo-500 to-purple-500 bg-clip-text text-transparent truncate">
@@ -80,15 +84,17 @@ export function Sidebar({ className }: SidebarProps) {
                         </span>
                     </div>
                 )}
-                <Button variant="ghost" size="icon" className={cn("shrink-0", !collapsed && "ml-auto")} onClick={toggleCollapse}>
-                    {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
-                    <span className="sr-only">Toggle Sidebar</span>
-                </Button>
+                {!isMobile && (
+                    <Button variant="ghost" size="icon" className={cn("shrink-0", !isCollapsed && "ml-auto")} onClick={toggleCollapse}>
+                        {isCollapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+                        <span className="sr-only">Toggle Sidebar</span>
+                    </Button>
+                )}
             </div>
 
             {/* Nav */}
             <ScrollArea className="flex-1 py-4">
-                <nav className="grid gap-1 px-2 group-[[data-collapsed=true]]:justify-center group-[[data-collapsed=true]]:px-2">
+                <nav className="grid gap-1 px-2 group-[[data-collapsed=true]]:justify-center group-[[data-collapsed=true]]:px-2" data-collapsed={isCollapsed}>
                     {menuItems.map((item) => {
                         const isActive = pathname === item.href
                         return (
@@ -100,14 +106,14 @@ export function Sidebar({ className }: SidebarProps) {
                                             className={cn(
                                                 "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground",
                                                 isActive ? "bg-accent text-accent-foreground" : "text-muted-foreground",
-                                                collapsed && "justify-center px-2"
+                                                isCollapsed && "justify-center px-2"
                                             )}
                                         >
                                             <item.icon className="h-5 w-5" />
-                                            {!collapsed && <span>{item.label}</span>}
+                                            {!isCollapsed && <span>{item.label}</span>}
                                         </Link>
                                     </TooltipTrigger>
-                                    {collapsed && <TooltipContent side="right">{item.label}</TooltipContent>}
+                                    {isCollapsed && <TooltipContent side="right">{item.label}</TooltipContent>}
                                 </Tooltip>
                             </TooltipProvider>
                         )
@@ -116,15 +122,15 @@ export function Sidebar({ className }: SidebarProps) {
             </ScrollArea>
 
             {/* Footer / Profile */}
-            <div className="border-t p-4">
+            <div className="border-t p-4 mt-auto">
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className={cn("w-full justify-start gap-2 px-2", collapsed && "justify-center px-0")}>
+                        <Button variant="ghost" className={cn("w-full justify-start gap-2 px-2", isCollapsed && "justify-center px-0")}>
                             <Avatar className="h-8 w-8">
                                 <AvatarImage src={`https://ui-avatars.com/api/?name=${user?.email || 'User'}&background=random`} alt="@user" />
                                 <AvatarFallback>{user?.email?.substring(0, 2).toUpperCase() || 'CN'}</AvatarFallback>
                             </Avatar>
-                            {!collapsed && (
+                            {!isCollapsed && (
                                 <div className="flex flex-col items-start text-xs text-left overflow-hidden">
                                     <span className="font-medium truncate w-full">{user?.email?.split('@')[0] || 'Loading...'}</span>
                                     <span className="text-muted-foreground truncate w-full">{user?.email || '...'}</span>

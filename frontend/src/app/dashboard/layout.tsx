@@ -25,7 +25,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return (
         <BreadcrumbProvider>
             <div className="flex h-screen overflow-hidden bg-background">
-                <Sidebar />
+                <Sidebar className="hidden md:flex" />
 
                 <div className="flex flex-col flex-1 overflow-hidden relative">
                     <Header />
