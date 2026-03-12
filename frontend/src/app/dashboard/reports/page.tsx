@@ -11,6 +11,7 @@ import { DatePickerWithRange } from '@/components/ui/date-range-picker';
 import { DateRange } from 'react-day-picker';
 import { subDays } from 'date-fns';
 import { TrendingUp, Target, Award, ArrowUpRight, Lightbulb, Package } from 'lucide-react';
+import DynamicReport from '@/components/dashboard/reports/DynamicReport';
 
 function StatCard({ title, value, subtext, icon: Icon }: { title: string; value: string; subtext?: string; icon: any }) {
     return (
@@ -154,7 +155,10 @@ export default function ReportsPage() {
             <div className="w-full pt-4">
                 <BuyerDetailedTable startDate={date?.from} endDate={date?.to} />
             </div>
+
+            <div className="w-full pt-4">
+                <DynamicReport startDate={date?.from} endDate={date?.to} />
+            </div>
         </div>
     );
 }
-
