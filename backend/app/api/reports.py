@@ -481,38 +481,62 @@ class DynamicReportRequest(BaseModel):
 @router.post("/dynamic")
 async def get_dynamic_report(request: DynamicReportRequest) -> Dict[str, Any]:
     try:
-        match_stage = {}
+        pipeline = []
+        
+        # 1. Initial date match
         date_match = get_date_match(request.start_date, request.end_date)
         if date_match:
-            match_stage.update(date_match)
+            pipeline.append({"$match": date_match})
             
-        # Apply custom filters
+        # Post-resolution match array for fields like Buyer Name
+        post_match_stages = []
+
+        # 2. Map and Apply Filters
         if request.filters:
             for f in request.filters:
-                # Map frontend fields to backend Mongo paths if necessary
                 target_field = f.field
+                is_dimension_resolved = False
+
                 if target_field == "source":
                     target_field = "source_domain"
                 elif target_field == "buyer":
-                    target_field = "buyer_id"
+                    target_field = "buyer_name" # Post-resolution
+                    is_dimension_resolved = True
                 elif target_field == "sub_source":
-                    # This might require complex $or in real scenario, 
-                    # but for basic $match we assume it's in lead_data
-                    target_field = "lead_data.sub_source"
-
-                if f.operator == 'equals':
-                    match_stage[target_field] = f.value
+                    # Use a post-resolution field to handle $ifNull logic consistently
+                    is_dimension_resolved = True
+                elif target_field == "lead_source":
+                    target_field = "lead_data.source"
+                elif target_field == "date":
+                    target_field = "created_at"
+                
+                # Build MongoDB query for this specific filter
+                # For string 'equals', use case-insensitive regex for better UX
+                query_val = f.value
+                if f.operator == 'equals' and isinstance(f.value, str):
+                    query_val = {"$regex": f"^{str(f.value)}$", "$options": "i"}
                 elif f.operator == 'not_equals':
-                    match_stage[target_field] = {"$ne": f.value}
+                    query_val = {"$ne": f.value}
                 elif f.operator == 'contains':
-                    match_stage[target_field] = {"$regex": str(f.value), "$options": "i"}
+                    query_val = {"$regex": str(f.value), "$options": "i"}
                 elif f.operator == 'greater_than':
-                    match_stage[target_field] = {"$gt": f.value}
+                    query_val = {"$gt": f.value}
                 elif f.operator == 'less_than':
-                    match_stage[target_field] = {"$lt": f.value}
+                    query_val = {"$lt": f.value}
+
+                match_stage = {"$match": {target_field: query_val}}
+                
+                if is_dimension_resolved:
+                    post_match_stages.append(match_stage)
+                else:
+                    pipeline.append(match_stage)
 
         # Build dynamic _id for $group
         group_id = {}
+        is_buyer_dim = "buyer" in request.dimensions
+        # Post-match stages can also check if a buyer filter is applied
+        has_buyer_filter = any('buyer_name' in stage['$match'] for stage in post_match_stages)
+        
         for dim in request.dimensions:
             if dim == "date":
                 group_id["year"] = {"$year": "$created_at"}
@@ -521,7 +545,6 @@ async def get_dynamic_report(request: DynamicReportRequest) -> Dict[str, Any]:
             elif dim == "source":
                 group_id["source"] = "$source_domain"
             elif dim == "sub_source":
-                # Handle nested sub_source or fallback to sub_id
                 group_id["sub_source"] = {
                     "$ifNull": ["$lead_data.sub_source", "$lead_data.sub_id"]
                 }
@@ -529,13 +552,12 @@ async def get_dynamic_report(request: DynamicReportRequest) -> Dict[str, Any]:
                 group_id["lead_source"] = "$lead_data.source"
             elif dim == "buyer":
                 group_id["buyer"] = "$buyer_id"
-                group_id["buyer_name"] = "$buyer_name" # Include name for easier display
+                group_id["buyer_name"] = "$buyer_name" 
+            elif dim == "status":
+                group_id["status"] = "$status"
             else:
                 group_id[dim] = f"${dim}"
 
-        pipeline = []
-        if match_stage:
-            pipeline.append({"$match": match_stage})
 
         # Pre-aggregation fields to evaluate validation results and redirection
         pipeline.append({
@@ -617,9 +639,11 @@ async def get_dynamic_report(request: DynamicReportRequest) -> Dict[str, Any]:
         })
 
         is_buyer_dim = "buyer" in request.dimensions
+        has_buyer_filter = any('buyer_name' in stage['$match'] for stage in post_match_stages)
+        has_sub_source_filter = any('sub_source' in stage['$match'] for stage in post_match_stages)
 
-        if is_buyer_dim:
-            # When grouping by buyer, we unwind the trace to find everyone we attempted
+        if is_buyer_dim or has_buyer_filter:
+            # When grouping by or filtering by buyer, we unwind the trace
             pipeline.append({
                 "$addFields": {
                     "buyer_attempts": {
@@ -707,6 +731,17 @@ async def get_dynamic_report(request: DynamicReportRequest) -> Dict[str, Any]:
                 }
             })
 
+        # Resolve other complex dimensions for post-matching
+        pipeline.append({
+            "$addFields": {
+                "sub_source": {"$ifNull": ["$lead_data.sub_source", "$lead_data.sub_id"]}
+            }
+        })
+
+        # 3. Apply post-resolution filters
+        if post_match_stages:
+            pipeline.extend(post_match_stages)
+
         pipeline.append({
             "$group": {
                 "_id": group_id if group_id else None,
@@ -714,7 +749,7 @@ async def get_dynamic_report(request: DynamicReportRequest) -> Dict[str, Any]:
                 "sold_leads": {
                     "$sum": {
                         "$cond": [
-                            {"$eq": ["$was_sold_to_this_buyer", True]} if is_buyer_dim else {"$eq": ["$status", "sold"]}, 
+                            {"$eq": ["$was_sold_to_this_buyer", True]} if (is_buyer_dim or has_buyer_filter) else {"$eq": ["$status", "sold"]}, 
                             1, 0
                         ]
                     }
@@ -722,7 +757,7 @@ async def get_dynamic_report(request: DynamicReportRequest) -> Dict[str, Any]:
                 "revenue": {
                     "$sum": {
                         "$cond": [
-                            {"$eq": ["$was_sold_to_this_buyer", True]} if is_buyer_dim else {"$eq": ["$status", "sold"]}, 
+                            {"$eq": ["$was_sold_to_this_buyer", True]} if (is_buyer_dim or has_buyer_filter) else {"$eq": ["$status", "sold"]}, 
                             "$sold_price", 0
                         ]
                     }

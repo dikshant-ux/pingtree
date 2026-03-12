@@ -21,7 +21,10 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Layers, ArrowUpDown, ChevronDown, Check, Search, BarChart3, Plus, RefreshCw, Download, Calendar as CalendarIcon, Trash2 } from 'lucide-react';
+import { Layers, ArrowUpDown, ChevronDown, Check, Search, BarChart3, Plus, RefreshCw, Download, Calendar as CalendarIcon, Trash2, X, Filter } from 'lucide-react';
+import { DatePickerWithRange } from '@/components/ui/date-range-picker';
+import { DateRange } from 'react-day-picker';
+import { subDays, startOfDay, endOfDay } from 'date-fns';
 
 const AVAILABLE_DIMENSIONS = [
     { id: 'date', label: 'Date' },
@@ -55,7 +58,15 @@ export default function DynamicReport({ startDate, endDate }: { startDate?: Date
     const [dimensions, setDimensions] = useState<string[]>(['source']);
     const [visibleMetrics, setVisibleMetrics] = useState<string[]>(AVAILABLE_METRICS.map(m => m.id));
     const [dateRangePreset, setDateRangePreset] = useState<string>('today');
+    const [customRange, setCustomRange] = useState<DateRange | undefined>({
+        from: new Date(),
+        to: new Date(),
+    });
     const [filters, setFilters] = useState<FilterEntry[]>([]);
+    const [filterField, setFilterField] = useState<string>(AVAILABLE_DIMENSIONS[0].id);
+    const [filterOperator, setFilterOperator] = useState<string>('equals');
+    const [filterValue, setFilterValue] = useState<string>('');
+    const [filterPopoverOpen, setFilterPopoverOpen] = useState(false);
     const [data, setData] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     
@@ -118,8 +129,12 @@ export default function DynamicReport({ startDate, endDate }: { startDate?: Date
                     calculatedStartDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
                     calculatedEndDate = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
                     break;
+                case 'custom':
+                    calculatedStartDate = customRange?.from ? startOfDay(customRange.from) : undefined;
+                    calculatedEndDate = customRange?.to ? endOfDay(customRange.to) : undefined;
+                    break;
                 default:
-                    // Use props if 'custom' or any untracked value
+                    // Use props if any untracked value
                     break;
             }
 
@@ -137,11 +152,28 @@ export default function DynamicReport({ startDate, endDate }: { startDate?: Date
         } finally {
             setLoading(false);
         }
-    }, [startDate, endDate, dimensions, dateRangePreset, filters]);
+    }, [startDate, endDate, dimensions, dateRangePreset, filters, customRange]);
 
     useEffect(() => {
         fetchDynamicData();
     }, [fetchDynamicData]);
+
+    const removeFilter = (id: string) => {
+        setFilters(prev => prev.filter(f => f.id !== id));
+    };
+
+    const addFilter = () => {
+        if (!filterValue.trim()) return;
+        const newEntry: FilterEntry = {
+            id: Math.random().toString(36).substr(2, 9),
+            field: filterField,
+            operator: filterOperator,
+            value: filterValue
+        };
+        setFilters(prev => [...prev, newEntry]);
+        setFilterValue(''); // Reset value
+        setFilterPopoverOpen(false); // Close popover
+    };
 
     const toggleDimension = (dimId: string) => {
         setDimensions(prev => {
@@ -283,9 +315,19 @@ export default function DynamicReport({ startDate, endDate }: { startDate?: Date
                             <SelectItem value="last_30_days">Last 30 Days</SelectItem>
                             <SelectItem value="this_month">This Month</SelectItem>
                             <SelectItem value="last_month">Last Month</SelectItem>
-                            <SelectItem value="custom" disabled>Custom Range...</SelectItem>
+                            <SelectItem value="custom">Custom Range...</SelectItem>
                         </SelectContent>
                     </Select>
+
+                    {dateRangePreset === 'custom' && (
+                        <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2 duration-200 z-40">
+                            <DatePickerWithRange 
+                                date={customRange} 
+                                setDate={setCustomRange} 
+                                className="h-9"
+                            />
+                        </div>
+                    )}
 
                     {/* Group By Dropdown */}
                     <Popover>
@@ -355,6 +397,68 @@ export default function DynamicReport({ startDate, endDate }: { startDate?: Date
                         </PopoverContent>
                     </Popover>
 
+                    {/* Add Filter Dropdown */}
+                    <Popover open={filterPopoverOpen} onOpenChange={setFilterPopoverOpen}>
+                        <PopoverTrigger asChild>
+                            <div className="flex items-center gap-2 px-3 py-1.5 border border-dashed border-border/100 rounded-md bg-background hover:bg-accent/50 cursor-pointer transition-colors shadow-sm">
+                                <Filter className="h-4 w-4 text-muted-foreground" />
+                                <span className="font-medium text-foreground">Add Filter</span>
+                            </div>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-64 p-3" align="start">
+                            <div className="space-y-3">
+                                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">New Filter</p>
+                                
+                                <div className="space-y-1.5">
+                                    <label className="text-[10px] font-bold text-muted-foreground uppercase">Field</label>
+                                    <Select value={filterField} onValueChange={setFilterField}>
+                                        <SelectTrigger className="h-8 text-xs">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {AVAILABLE_DIMENSIONS.map(dim => (
+                                                <SelectItem key={dim.id} value={dim.id} className="text-xs">
+                                                    {dim.label}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                <div className="space-y-1.5">
+                                    <label className="text-[10px] font-bold text-muted-foreground uppercase">Operator</label>
+                                    <Select value={filterOperator} onValueChange={setFilterOperator}>
+                                        <SelectTrigger className="h-8 text-xs">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="equals" className="text-xs">Equals</SelectItem>
+                                            <SelectItem value="not_equals" className="text-xs">Not Equals</SelectItem>
+                                            <SelectItem value="contains" className="text-xs">Contains</SelectItem>
+                                            <SelectItem value="greater_than" className="text-xs">Greater Than</SelectItem>
+                                            <SelectItem value="less_than" className="text-xs">Less Than</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                <div className="space-y-1.5">
+                                    <label className="text-[10px] font-bold text-muted-foreground uppercase">Value</label>
+                                    <Input 
+                                        placeholder="Enter value..." 
+                                        className="h-8 text-xs" 
+                                        value={filterValue}
+                                        onChange={(e) => setFilterValue(e.target.value)}
+                                        onKeyDown={(e) => { if(e.key === 'Enter') addFilter(); }}
+                                    />
+                                </div>
+
+                                <Button className="w-full h-8 text-xs mt-2" onClick={addFilter}>
+                                    Apply Filter
+                                </Button>
+                            </div>
+                        </PopoverContent>
+                    </Popover>
+
                 </div>
 
                 {/* Right Controls */}
@@ -369,6 +473,38 @@ export default function DynamicReport({ startDate, endDate }: { startDate?: Date
                     </Button>
                 </div>
             </div>
+
+            {/* Active Filters Bar */}
+            {filters.length > 0 && (
+                <div className="flex flex-wrap items-center gap-2 p-3 border-x border-border/60 bg-muted/20">
+                    <span className="text-[11px] font-bold text-muted-foreground uppercase mr-1">Active Filters:</span>
+                    {filters.map(filter => {
+                        const fieldLabel = AVAILABLE_DIMENSIONS.find(d => d.id === filter.field)?.label || filter.field;
+                        return (
+                            <div 
+                                key={filter.id}
+                                className="flex items-center gap-1.5 px-2 py-1 bg-background border border-border/80 rounded-full text-[11px] shadow-sm animate-in zoom-in-95 duration-200"
+                            >
+                                <span className="font-semibold text-foreground">{fieldLabel}</span>
+                                <span className="text-muted-foreground">{filter.operator.replace('_', ' ')}</span>
+                                <span className="font-bold text-primary italic">"{filter.value}"</span>
+                                <button 
+                                    onClick={() => removeFilter(filter.id)}
+                                    className="ml-0.5 p-0.5 hover:bg-accent rounded-full transition-colors text-muted-foreground hover:text-destructive"
+                                >
+                                    <X className="h-3 w-3" />
+                                </button>
+                            </div>
+                        );
+                    })}
+                    <button 
+                        onClick={() => setFilters([])}
+                        className="text-[10px] font-bold text-muted-foreground hover:text-destructive transition-colors ml-2 uppercase"
+                    >
+                        Clear All
+                    </button>
+                </div>
+            )}
 
             {/* Table Area */}
             <div className="border border-t-0 border-border/60 rounded-b-xl bg-card overflow-hidden relative shadow-sm">
