@@ -394,7 +394,7 @@
             return null;
         },
 
-        waitForTrustedForm: function (timeout = 3000) {
+        waitForTrustedForm: function (timeout = 10000) {
             return new Promise((resolve) => {
                 const start = Date.now();
                 const interval = setInterval(() => {
@@ -493,9 +493,22 @@
             // Override style from formConfig if not explicitly passed in options
             const formStyle = options.style || (this.config.formConfig ? this.config.formConfig.style : 'multi-step');
 
-            // Load TrustedForm script dynamically
+            // We define loadTrustedForm here but call it AFTER the form is in the DOM
             const loadTrustedForm = () => {
-                if (window.__trustedFormLoaded) return;
+                if (window.TrustedForm) {
+                    // Script already exists, but we might need to re-trigger or ensure it finds the new form
+                    // Actually TrustedForm script usually scans on load. 
+                    // If it's already "loaded" by JS flag but the input is missing, we might need to re-inject.
+                    const existingTf = document.querySelector('script[src*="trustedform.js"]');
+                    if (existingTf && !document.querySelector('input[name="xxTrustedFormCertUrl"]')) {
+                        // If script exists but no input, it likely failed to find form on first run.
+                        // We remove and re-add or just let it be. TrustedForm is tricky. 
+                        // Best is to NOT load until form is there.
+                    }
+                }
+
+                if (window.__trustedFormLoaded && document.querySelector('input[name="xxTrustedFormCertUrl"]')) return;
+                
                 window.__trustedFormLoaded = true;
                 const tf = document.createElement("script");
                 tf.type = "text/javascript";
@@ -504,10 +517,6 @@
                     "api.trustedform.com/trustedform.js?field=xxTrustedFormCertUrl";
                 document.head.appendChild(tf);
             };
-
-
-            // Call it
-            loadTrustedForm();
 
             // Inject Premium Polished CSS
             const styleId = 'pingtree-premium-style';
@@ -1289,6 +1298,9 @@
                     </form>
                 </div>
             `;
+
+            // CRITICAL: Load TrustedForm AFTER injection so it can find the <form> element
+            loadTrustedForm();
 
             // VALDIATION & MASKING LOGIC
             const form = document.getElementById('ptDesignForm');
