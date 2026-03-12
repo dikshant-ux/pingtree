@@ -654,16 +654,50 @@ async def get_dynamic_report(request: DynamicReportRequest) -> Dict[str, Any]:
                 }
             })
             
-            # If no actual buyers reached (maybe rejected early), we still need to keep the lead for other dimension grouping
-            # but for buyer-specific grouping it should probably only show if there's an attempt.
-            # Actually, standard behavior is that if you group by Buyer, you only see rows for hits.
             pipeline.append({"$unwind": "$buyer_attempts"})
             
+            # Buyer Name Resolution: Lookup master name from buyers collection
+            pipeline.append({
+                "$lookup": {
+                    "from": "buyers",
+                    "let": {"search_id": "$buyer_attempts.buyer_id"},
+                    "pipeline": [
+                        {
+                            "$match": {
+                                "$expr": {
+                                    "$eq": [
+                                        "$_id", 
+                                        {
+                                            "$cond": [
+                                                {"$and": [
+                                                    {"$ne": ["$$search_id", None]},
+                                                    {"$eq": [{"$type": "$$search_id"}, "string"]},
+                                                    {"$eq": [{"$strLenCP": "$$search_id"}, 24]}
+                                                ]},
+                                                {"$toObjectId": "$$search_id"},
+                                                "$$search_id"
+                                            ]
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    ],
+                    "as": "buyer_master"
+                }
+            })
+
             # Repopulate top-level fields for buyer group mapping
             pipeline.append({
                 "$addFields": {
                     "buyer_id": "$buyer_attempts.buyer_id",
-                    "buyer_name": "$buyer_attempts.buyer_name",
+                    "buyer_name": {
+                        "$ifNull": [
+                            {"$arrayElemAt": ["$buyer_master.name", 0]},
+                            "$buyer_attempts.buyer_name", # Fallback to name in trace
+                            "$buyer_attempts.buyer_id"     # Final fallback to ID
+                        ]
+                    },
                     "was_sold_to_this_buyer": {
                         "$and": [
                             {"$eq": ["$status", "sold"]},
