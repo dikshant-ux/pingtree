@@ -541,16 +541,21 @@ async def get_dynamic_report(request: DynamicReportRequest) -> Dict[str, Any]:
         pipeline.append({
             "$addFields": {
                 "has_good_email": {
-                    "$gt": [
+                    "$eq": [
                         {
                             "$size": {
                                 "$filter": {
                                     "input": {"$ifNull": ["$validation_results", []]},
                                     "as": "v",
                                     "cond": {
-                                        "$and": [
-                                            {"$eq": ["$$v.success", True]},
-                                            {"$gte": [{"$indexOfCP": [{"$toLower": "$$v.validator_name"}, "email"]}, 0]}
+                                        "$or": [
+                                            {
+                                                "$and": [
+                                                    {"$eq": ["$$v.success", False]},
+                                                    {"$gte": [{"$indexOfCP": [{"$toLower": "$$v.validator_name"}, "email"]}, 0]}
+                                                ]
+                                            },
+                                            {"$eq": ["$$v.response_body.data.email.status", "invalid"]}
                                         ]
                                     }
                                 }
@@ -560,16 +565,21 @@ async def get_dynamic_report(request: DynamicReportRequest) -> Dict[str, Any]:
                     ]
                 },
                 "has_good_ip": {
-                    "$gt": [
+                    "$eq": [
                         {
                             "$size": {
                                 "$filter": {
                                     "input": {"$ifNull": ["$validation_results", []]},
                                     "as": "v",
                                     "cond": {
-                                        "$and": [
-                                            {"$eq": ["$$v.success", True]},
-                                            {"$gte": [{"$indexOfCP": [{"$toLower": "$$v.validator_name"}, "ip"]}, 0]}
+                                        "$or": [
+                                            {
+                                                "$and": [
+                                                    {"$eq": ["$$v.success", False]},
+                                                    {"$gte": [{"$indexOfCP": [{"$toLower": "$$v.validator_name"}, "ip"]}, 0]}
+                                                ]
+                                            },
+                                            {"$eq": ["$$v.response_body.data.ip.status", "invalid"]}
                                         ]
                                     }
                                 }
@@ -579,16 +589,21 @@ async def get_dynamic_report(request: DynamicReportRequest) -> Dict[str, Any]:
                     ]
                 },
                 "has_good_phone": {
-                    "$gt": [
+                    "$eq": [
                         {
                             "$size": {
                                 "$filter": {
                                     "input": {"$ifNull": ["$validation_results", []]},
                                     "as": "v",
                                     "cond": {
-                                        "$and": [
-                                            {"$eq": ["$$v.success", True]},
-                                            {"$gte": [{"$indexOfCP": [{"$toLower": "$$v.validator_name"}, "phone"]}, 0]}
+                                        "$or": [
+                                            {
+                                                "$and": [
+                                                    {"$eq": ["$$v.success", False]},
+                                                    {"$gte": [{"$indexOfCP": [{"$toLower": "$$v.validator_name"}, "phone"]}, 0]}
+                                                ]
+                                            },
+                                            {"$eq": ["$$v.response_body.data.phone.status", "invalid"]}
                                         ]
                                     }
                                 }
