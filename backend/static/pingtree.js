@@ -1613,12 +1613,22 @@
                 const formData = new FormData(form);
                 const data = Object.fromEntries(formData.entries());
 
-                // Capture reCAPTCHA token if present
-                if (typeof grecaptcha !== 'undefined') {
-                    const recaptchaResponse = grecaptcha.getResponse();
-                    if (recaptchaResponse) {
-                        data['g-recaptcha-response'] = recaptchaResponse;
+                // Capture reCAPTCHA token if enabled
+                if (recaptchaEnabled) {
+                    if (typeof grecaptcha === 'undefined') {
+                        status.innerHTML = `<div class="pt-status-error">Security module not loaded. Please refresh.</div>`;
+                        return;
                     }
+                    const recaptchaResponse = grecaptcha.getResponse();
+                    if (!recaptchaResponse) {
+                        status.innerHTML = `<div class="pt-status-error">Please complete the reCAPTCHA verification.</div>`;
+                        // Scroll to help user find it
+                        const recaptchaEl = form.querySelector('.g-recaptcha');
+                        if (recaptchaEl) recaptchaEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        return;
+                    }
+                    data['g-recaptcha-response'] = recaptchaResponse;
+                    status.innerHTML = ""; // Clear any previous error
                 }
 
                 // --- START PROCESSING UI ---
