@@ -22,9 +22,9 @@ class AuctionEngine:
     def __init__(self):
         self.buyer_client = BuyerClient()
 
-    async def run_auction(self, lead_data: Dict[str, Any], metadata: Dict[str, Any] = {}) -> Lead:
+    async def run_auction(self, lead_data: Dict[str, Any], metadata: Dict[str, Any] = {}, trace: List[Dict[str, Any]] = None) -> Lead:
         start_time = time.time()
-        trace = []
+        trace = trace or []
         
         def add_trace(stage: str, status: str, buyer_id: str = None, buyer_name: str = None, details: str = None, raw_response: Any = None, request_payload: Any = None):
             trace.append({

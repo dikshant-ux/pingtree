@@ -197,7 +197,7 @@ async def public_ingest_lead(
         return await generate_response(status="Invalid Lead", lead_id=str(lead.id), reason="Validation Failed")
 
     # Execute Auction
-    result = await auction_engine.run_auction(lead_data, metadata=metadata)
+    result = await auction_engine.run_auction(lead_data, metadata=metadata, trace=trace)
     
     return await generate_response(
         status=result.status.value if hasattr(result.status, 'value') else result.status,
