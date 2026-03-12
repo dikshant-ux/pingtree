@@ -2,8 +2,11 @@ from fastapi import APIRouter, Depends, HTTPException, Body
 from app.api.deps import get_current_active_user
 from app.models.user import User
 from app.models.form import LeadForm, ClickIdConfig
+from app.models.lead import LeadStatus
+from app.core.security import encrypt_secret
 from typing import List, Optional
 from pydantic import BaseModel
+from datetime import datetime
 
 router = APIRouter()
 
@@ -13,6 +16,9 @@ class LeadFormCreate(BaseModel):
     primary_color: str = "#28a745"
     style: str = "multi-step"
     allowed_domains: List[str] = []
+    recaptcha_enabled: bool = False
+    recaptcha_site_key: Optional[str] = None
+    recaptcha_secret_key: Optional[str] = None
     reject_redirect_url: Optional[str] = None
     click_id_configs: List[ClickIdConfig] = []
 
@@ -23,6 +29,9 @@ class LeadFormUpdate(BaseModel):
     style: Optional[str] = None
     allowed_domains: Optional[List[str]] = None
     is_active: Optional[bool] = None
+    recaptcha_enabled: Optional[bool] = None
+    recaptcha_site_key: Optional[str] = None
+    recaptcha_secret_key: Optional[str] = None
     reject_redirect_url: Optional[str] = None
     click_id_configs: Optional[List[ClickIdConfig]] = None
 
@@ -35,9 +44,13 @@ async def create_form(
     form_in: LeadFormCreate,
     current_user: User = Depends(get_current_active_user)
 ):
+    form_dict = form_in.model_dump()
+    secret_key = form_dict.pop("recaptcha_secret_key", None)
+    
     form = LeadForm(
+        **form_dict,
         user_id=str(current_user.id),
-        **form_in.dict()
+        encrypted_recaptcha_secret_key=encrypt_secret(secret_key) if secret_key else None
     )
     await form.insert()
     return form
@@ -59,7 +72,11 @@ async def update_form(
     if not form or form.user_id != str(current_user.id):
         raise HTTPException(status_code=404, detail="Form not found")
     
-    update_data = form_in.dict(exclude_unset=True)
+    update_data = form_in.model_dump(exclude_unset=True)
+    if "recaptcha_secret_key" in update_data:
+        secret_key = update_data.pop("recaptcha_secret_key")
+        update_data["encrypted_recaptcha_secret_key"] = encrypt_secret(secret_key) if secret_key else None
+        
     for field, value in update_data.items():
         setattr(form, field, value)
     

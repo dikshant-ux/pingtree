@@ -3,6 +3,9 @@ from app.models.user import User
 from app.models.form import LeadForm
 from app.services.ping.auction_engine import auction_engine
 from app.models.lead import LeadStatus
+from app.core.config import settings
+from app.core.http_client import http_client_manager
+from app.core.security import decrypt_secret
 from datetime import datetime
 import time
 from typing import Dict, Any, Optional
@@ -110,6 +113,50 @@ async def public_ingest_lead(
             "redirect_url": final_redirect,
             **({"reason": reason} if reason else {})
         }
+    
+    # reCAPTCHA Verification
+    if metadata.get("form_id"):
+        try:
+            form = await LeadForm.get(metadata["form_id"])
+            if form and getattr(form, 'recaptcha_enabled', False):
+                recaptcha_token = lead_data.pop("g-recaptcha-response", None)
+                if not recaptcha_token:
+                    lead = await auction_engine.create_lead(lead_data, LeadStatus.INVALID, trace, start_time, metadata)
+                    return await generate_response(status="Invalid Lead", lead_id=str(lead.id), reason="reCAPTCHA Token Required")
+                
+                # Determine which secret key to use (Custom vs Global)
+                secret_key = settings.RECAPTCHA_SECRET_KEY
+                if getattr(form, 'encrypted_recaptcha_secret_key', None):
+                    decrypted = decrypt_secret(form.encrypted_recaptcha_secret_key)
+                    if decrypted:
+                        secret_key = decrypted
+                
+                # Verify with Google
+                client = http_client_manager.get_client()
+                verify_res = await client.post(
+                    "https://www.google.com/recaptcha/api/siteverify",
+                    data={
+                        "secret": secret_key,
+                        "response": recaptcha_token,
+                        "remoteip": ip_address
+                    }
+                )
+                verify_data = verify_res.json()
+                if not verify_data.get("success"):
+                    lead = await auction_engine.create_lead(lead_data, LeadStatus.INVALID, trace, start_time, metadata)
+                    return await generate_response(status="Invalid Lead", lead_id=str(lead.id), reason="reCAPTCHA Verification Failed")
+                
+                trace.append({
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "stage": "Security",
+                    "status": "Verified",
+                    "details": "reCAPTCHA verification successful"
+                })
+        except Exception as e:
+            # If DB fails, we might want to log it but maybe continue if it's not critical?
+            # Actually, if reCAPTCHA is mandatory, we should fail.
+            print(f"Error during reCAPTCHA verification: {e}")
+            pass
 
     # Execute Validation (Optional)
     from app.models.validation import LeadValidationConfig

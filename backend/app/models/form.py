@@ -17,6 +17,9 @@ class LeadForm(Document):
     style: str = Field(default="multi-step", description="Form display style: 'multi-step' or 'single-step'")
     allowed_domains: list[str] = Field(default_factory=list, description="List of domains allowed to embed this form")
     is_active: bool = True
+    recaptcha_enabled: bool = False
+    recaptcha_site_key: Optional[str] = Field(None, description="Custom reCAPTCHA site key")
+    encrypted_recaptcha_secret_key: Optional[str] = Field(None, description="Encrypted custom reCAPTCHA secret key")
     reject_redirect_url: Optional[str] = Field(None, description="URL to redirect user if lead is rejected")
     click_id_configs: List[ClickIdConfig] = Field(default_factory=list)
     created_at: datetime = Field(default_factory=datetime.utcnow)

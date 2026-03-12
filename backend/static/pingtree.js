@@ -235,18 +235,28 @@
             }
             return null;
         },
-
         loadExternalScripts: async function () {
-            if (!this.config.formConfig || !this.config.formConfig.click_id_configs) return;
-
-            for (const config of this.config.formConfig.click_id_configs) {
-                if (config.method === 'rtk' && config.script_url) {
-                    if (!document.querySelector(`script[src*="${config.script_url}"]`)) {
-                        const script = document.createElement('script');
-                        script.src = config.script_url;
-                        script.async = true;
-                        document.head.appendChild(script);
+            if (this.config.formConfig && this.config.formConfig.click_id_configs) {
+                for (const config of this.config.formConfig.click_id_configs) {
+                    if (config.method === 'rtk' && config.script_url) {
+                        if (!document.querySelector(`script[src*="${config.script_url}"]`)) {
+                            const script = document.createElement('script');
+                            script.src = config.script_url;
+                            script.async = true;
+                            document.head.appendChild(script);
+                        }
                     }
+                }
+            }
+
+            // Google reCAPTCHA loading
+            if (this.config.formConfig && this.config.formConfig.recaptcha_enabled) {
+                if (!window.grecaptcha && !document.querySelector('script[src*="recaptcha/api.js"]')) {
+                    const script = document.createElement('script');
+                    script.src = 'https://www.google.com/recaptcha/api.js';
+                    script.async = true;
+                    script.defer = true;
+                    document.head.appendChild(script);
                 }
             }
         },
@@ -936,6 +946,9 @@
             const siteHost = window.location.hostname;
             const privacyUrl = `${siteOrigin}/privacy-policy`;
             const termsUrl = `${siteOrigin}/terms-and-conditions`;
+            
+            const recaptchaEnabled = this.config.formConfig && this.config.formConfig.recaptcha_enabled;
+            const recaptchaSiteKey = (this.config.formConfig && this.config.formConfig.recaptcha_site_key) || "";
 
             container.innerHTML = `
                 <div class="pt-form-wrapper">
@@ -1256,6 +1269,13 @@
                                     <br><br>
                                     I also consent to receive marketing and other texts or calls from ${siteHost} and/or its marketing partners at the number previously provided, by any means or technology, including an automatic dialing system, to the phone number I have provided, even if that number is on a national or state Do-Not-Call registry. Carrier and data rates may apply. I understand that my consent to such calls and text messages is not required to purchase products from or use the services of ${siteHost} and/or its marketing partners.
                                 </div>
+                                
+                                
+                                ${recaptchaEnabled ? `
+                                <div class="pt-group" style="margin-bottom: 20px; display: flex; justify-content: center;">
+                                    <div class="g-recaptcha" data-sitekey="${recaptchaSiteKey}"></div>
+                                </div>
+                                ` : ''}
                                 
                                 <button type="submit" class="pt-footer-btn" id="pt-submit-btn">AGREE AND SUBMIT</button>
                             </div>
@@ -1592,6 +1612,14 @@
                 // 1. CAPTURE DATA FIRST before we wipe the UI
                 const formData = new FormData(form);
                 const data = Object.fromEntries(formData.entries());
+
+                // Capture reCAPTCHA token if present
+                if (typeof grecaptcha !== 'undefined') {
+                    const recaptchaResponse = grecaptcha.getResponse();
+                    if (recaptchaResponse) {
+                        data['g-recaptcha-response'] = recaptchaResponse;
+                    }
+                }
 
                 // --- START PROCESSING UI ---
                 const waitMessages = [

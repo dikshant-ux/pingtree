@@ -41,3 +41,27 @@ def get_password_hash(password: str) -> str:
     # Always pre-hash
     password = _pre_hash(password)
     return pwd_context.hash(password)
+
+import base64
+from cryptography.fernet import Fernet
+
+def _get_fernet_key() -> bytes:
+    # Derive a valid Fernet key from the application's SECRET_KEY
+    key_material = hashlib.sha256(settings.SECRET_KEY.encode()).digest()
+    return base64.urlsafe_b64encode(key_material)
+
+def encrypt_secret(plain_text: str) -> str:
+    if not plain_text:
+        return ""
+    f = Fernet(_get_fernet_key())
+    return f.encrypt(plain_text.encode()).decode()
+
+def decrypt_secret(encrypted_text: str) -> str:
+    if not encrypted_text:
+        return ""
+    try:
+        f = Fernet(_get_fernet_key())
+        return f.decrypt(encrypted_text.encode()).decode()
+    except Exception as e:
+        print(f"DEBUG: decrypt_secret error: {e}")
+        return ""

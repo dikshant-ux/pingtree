@@ -20,6 +20,11 @@ class Settings(BaseSettings):
     BASE_URL: str = "https://js.trustedagentforyou.com"
     FRONTEND_URL: str = "https://js.trustedagentforyou.com"
     
+    # RECAPTCHA
+    RECAPTCHA_SITE_KEY: str = "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI" # Default test key
+    RECAPTCHA_SECRET_KEY: str = "6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe" # Default test key
+    
+    
     class Config:
         env_file = ".env"
 
