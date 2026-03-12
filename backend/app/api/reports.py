@@ -616,18 +616,81 @@ async def get_dynamic_report(request: DynamicReportRequest) -> Dict[str, Any]:
             }
         })
 
+        is_buyer_dim = "buyer" in request.dimensions
+
+        if is_buyer_dim:
+            # When grouping by buyer, we unwind the trace to find everyone we attempted
+            pipeline.append({
+                "$addFields": {
+                    "buyer_attempts": {
+                        "$setUnion": {
+                            "$filter": {
+                                "input": {
+                                    "$map": {
+                                        "input": {"$ifNull": ["$trace", []]},
+                                        "as": "t",
+                                        "in": {
+                                            "$cond": [
+                                                {
+                                                    "$and": [
+                                                        {"$in": ["$$t.stage", ["Ping", "Post"]]},
+                                                        {"$ne": ["$$t.buyer_id", None]}
+                                                    ]
+                                                },
+                                                {
+                                                    "buyer_id": "$$t.buyer_id",
+                                                    "buyer_name": "$$t.buyer_name"
+                                                },
+                                                "REMOVE"
+                                            ]
+                                        }
+                                    }
+                                },
+                                "as": "res",
+                                "cond": {"$ne": ["$$res", "REMOVE"]}
+                            }
+                        }
+                    }
+                }
+            })
+            
+            # If no actual buyers reached (maybe rejected early), we still need to keep the lead for other dimension grouping
+            # but for buyer-specific grouping it should probably only show if there's an attempt.
+            # Actually, standard behavior is that if you group by Buyer, you only see rows for hits.
+            pipeline.append({"$unwind": "$buyer_attempts"})
+            
+            # Repopulate top-level fields for buyer group mapping
+            pipeline.append({
+                "$addFields": {
+                    "buyer_id": "$buyer_attempts.buyer_id",
+                    "buyer_name": "$buyer_attempts.buyer_name",
+                    "was_sold_to_this_buyer": {
+                        "$and": [
+                            {"$eq": ["$status", "sold"]},
+                            {"$eq": ["$buyer_id", "$buyer_attempts.buyer_id"]}
+                        ]
+                    }
+                }
+            })
+
         pipeline.append({
             "$group": {
                 "_id": group_id if group_id else None,
                 "total_leads": {"$sum": 1},
                 "sold_leads": {
                     "$sum": {
-                        "$cond": [{"$eq": ["$status", "sold"]}, 1, 0]
+                        "$cond": [
+                            {"$eq": ["$was_sold_to_this_buyer", True]} if is_buyer_dim else {"$eq": ["$status", "sold"]}, 
+                            1, 0
+                        ]
                     }
                 },
                 "revenue": {
                     "$sum": {
-                        "$cond": [{"$eq": ["$status", "sold"]}, "$sold_price", 0]
+                        "$cond": [
+                            {"$eq": ["$was_sold_to_this_buyer", True]} if is_buyer_dim else {"$eq": ["$status", "sold"]}, 
+                            "$sold_price", 0
+                        ]
                     }
                 },
                 "emails_good": {
