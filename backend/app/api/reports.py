@@ -550,7 +550,7 @@ async def get_dynamic_report(request: DynamicReportRequest) -> Dict[str, Any]:
                                     "cond": {
                                         "$and": [
                                             {"$eq": ["$$v.success", True]},
-                                            {"$regexMatch": {"input": {"$toLower": "$$v.validator_name"}, "regex": "email"}}
+                                            {"$gte": [{"$indexOfCP": [{"$toLower": "$$v.validator_name"}, "email"]}, 0]}
                                         ]
                                     }
                                 }
@@ -569,7 +569,7 @@ async def get_dynamic_report(request: DynamicReportRequest) -> Dict[str, Any]:
                                     "cond": {
                                         "$and": [
                                             {"$eq": ["$$v.success", True]},
-                                            {"$regexMatch": {"input": {"$toLower": "$$v.validator_name"}, "regex": "ip"}}
+                                            {"$gte": [{"$indexOfCP": [{"$toLower": "$$v.validator_name"}, "ip"]}, 0]}
                                         ]
                                     }
                                 }
@@ -588,7 +588,7 @@ async def get_dynamic_report(request: DynamicReportRequest) -> Dict[str, Any]:
                                     "cond": {
                                         "$and": [
                                             {"$eq": ["$$v.success", True]},
-                                            {"$regexMatch": {"input": {"$toLower": "$$v.validator_name"}, "regex": "phone"}}
+                                            {"$gte": [{"$indexOfCP": [{"$toLower": "$$v.validator_name"}, "phone"]}, 0]}
                                         ]
                                     }
                                 }
