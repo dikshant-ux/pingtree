@@ -26,8 +26,8 @@ import { Layers, ArrowUpDown, ChevronDown, Check, Search, BarChart3, Plus, Refre
 const AVAILABLE_DIMENSIONS = [
     { id: 'date', label: 'Date' },
     { id: 'source', label: 'Source Domain' },
-    { id: 'sub_source', label: 'Sub Source' },
-    { id: 'lead_source', label: 'Lead Source' },
+    { id: 'sub_source', label: 'Sub-Publisher' },
+    { id: 'lead_source', label: 'Publisher' },
     { id: 'buyer', label: 'Buyer' },
     { id: 'status', label: 'Status' }
 ];
