@@ -528,8 +528,8 @@ async def get_dynamic_report(request: DynamicReportRequest) -> Dict[str, Any]:
             elif dim == "lead_source":
                 group_id["lead_source"] = "$lead_data.source"
             elif dim == "buyer":
-                group_id["buyer"] = "$buyer_id"
-                group_id["buyer_name"] = "$buyer_name" # Include name for easier display
+                group_id["buyer"] = "$buyer_attempts.buyer_id"
+                group_id["buyer_name"] = "$buyer_attempts.buyer_name" # Include name for easier display
             else:
                 group_id[dim] = f"${dim}"
 
@@ -601,18 +601,57 @@ async def get_dynamic_report(request: DynamicReportRequest) -> Dict[str, Any]:
             }
         })
 
+        if "buyer" in request.dimensions:
+            # We need to extract the buyer_id from traces so we can group unsold/invalid leads too
+            pipeline.append({
+                "$addFields": {
+                    "valid_traces": {
+                        "$filter": {
+                            "input": {"$ifNull": ["$trace", []]},
+                            "as": "t",
+                            "cond": {"$ne": ["$$t.buyer_id", None]}
+                        }
+                    }
+                }
+            })
+            pipeline.append({
+                "$addFields": {
+                    "buyer_attempts": {
+                        "$cond": {
+                            "if": {"$gt": [{"$size": "$valid_traces"}, 0]},
+                            "then": "$valid_traces",
+                            "else": [{"buyer_id": "Unknown", "buyer_name": "Unknown Buyer"}]
+                        }
+                    }
+                }
+            })
+            # Unwind the buyer_attempts array so we have one document per buyer attempt
+            pipeline.append({"$unwind": "$buyer_attempts"})
+
+            # Now, when counting sold leads and revenue within the group, 
+            # we must only count it if THIS record in the unwound array matches the winning buyer
+            sold_cond = {
+                "$and": [
+                    {"$eq": ["$status", "sold"]},
+                    {"$eq": ["$buyer_id", "$buyer_attempts.buyer_id"]}
+                ]
+            }
+        else:
+            # Normal behavior without buyer dimension
+            sold_cond = {"$eq": ["$status", "sold"]}
+
         pipeline.append({
             "$group": {
                 "_id": group_id if group_id else None,
                 "total_leads": {"$sum": 1},
                 "sold_leads": {
                     "$sum": {
-                        "$cond": [{"$eq": ["$status", "sold"]}, 1, 0]
+                        "$cond": [sold_cond, 1, 0]
                     }
                 },
                 "revenue": {
                     "$sum": {
-                        "$cond": [{"$eq": ["$status", "sold"]}, "$sold_price", 0]
+                        "$cond": [sold_cond, "$sold_price", 0]
                     }
                 },
                 "emails_good": {
