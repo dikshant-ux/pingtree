@@ -13,74 +13,92 @@ from app.models.sync_task import SyncTask, SyncTaskStatus
 logger = logging.getLogger(__name__)
 
 class IntegrationService:
-    @staticmethod
-    async def run_bulk_sync(user_id: str):
+    async def run_bulk_sync(self, user_id: str):
         """
         Background task that iterates through historical leads and dispatches them.
         """
+        print(f"DEBUG: run_bulk_sync started for {user_id}")
+        logger.info(f"Starting run_bulk_sync for user: {user_id}")
         try:
-            task = await SyncTask.find_one(SyncTask.user_id == user_id)
-            if not task or task.status != SyncTaskStatus.RUNNING:
+            # Small delay to ensure DB persistence from the main thread
+            await asyncio.sleep(1.0)
+            
+            # Explicit dictionary find to avoid any Beanie-specific sugar issues in background
+            task = await SyncTask.find_one({"user_id": user_id})
+            if not task:
+                logger.error(f"Sync task NOT FOUND in DB for user {user_id}. Terminating.")
                 return
 
+            logger.info(f"Worker check - Status: {task.status}, Processed: {task.processed_leads}/{task.total_leads}")
+
+            if task.status != SyncTaskStatus.RUNNING:
+                logger.warning(f"Worker aborting: status is {task.status} (expected RUNNING)")
+                return
+
+            # Ensure total_leads is accurate
+            snapshot_time = task.started_at or datetime.utcnow()
             if task.total_leads == 0:
-                task.total_leads = await Lead.count()
+                task.total_leads = await Lead.find({"created_at": {"$lte": snapshot_time}}).count()
+                logger.info(f"Recalculated total leads for snapshot: {task.total_leads}")
                 await task.save()
 
             batch_size = 50
-            
             while True:
-                # Refresh task state to check for PAUSE
-                task = await SyncTask.find_one(SyncTask.user_id == user_id)
+                # Re-fetch task to check for external PAUSE/RESET
+                task = await SyncTask.find_one({"user_id": user_id})
                 if not task or task.status != SyncTaskStatus.RUNNING:
-                    logger.info(f"Bulk sync for user {user_id} stopped or paused.")
+                    logger.info("Worker loop ending: task paused, reset, or missing.")
                     break
                 
-            while True:
-                # Refresh task state to check for PAUSE
-                task = await SyncTask.find_one(SyncTask.user_id == user_id)
-                if not task or task.status != SyncTaskStatus.RUNNING:
-                    logger.info(f"Bulk sync for user {user_id} stopped or paused.")
-                    break
-                
-                # Fetch next batch: Leads created before started_at AND after last_lead_id
-                query = {"created_at": {"$lte": task.started_at}}
+                # Query leads <= started_at AND > last_lead_id
+                query = {"created_at": {"$lte": snapshot_time}}
                 if task.last_lead_id:
                     from bson import ObjectId
                     query["_id"] = {"$gt": ObjectId(task.last_lead_id)}
                 
+                logger.info(f"Sync batch query: {query}")
                 leads = await Lead.find(query).sort("_id").limit(batch_size).to_list()
                 
+                logger.info(f"Found {len(leads)} leads in this batch.")
+                
                 if not leads:
+                    logger.info("No more leads found. Marking task as COMPLETED.")
                     task.status = SyncTaskStatus.COMPLETED
                     await task.save()
-                    logger.info(f"Bulk sync for user {user_id} completed.")
                     break
                 
                 for lead in leads:
-                    # Double check status before each lead for immediate pause
-                    # (Optimization: check every 5 leads if high volume)
-                    
-                    # Determine event type
+                    # Determine event
                     event_type = WebhookEvent.LEAD_REJECTED
                     if lead.status == LeadStatus.SOLD:
                         event_type = WebhookEvent.LEAD_SOLD
                     elif lead.status == LeadStatus.UNSOLD:
                         event_type = WebhookEvent.LEAD_UNSOLD
                     
-                    # Dispatch
-                    await IntegrationService.dispatch_lead_event(str(lead.id), event_type)
+                    # Dispatch and check for rate limits
+                    # We collect results to see if any webhook is rate limiting us
+                    # For simplicity, we check if the last dispatch hit a 429
+                    await self.dispatch_lead_event(str(lead.id), event_type)
                     
-                    # Update task state
+                    # Update progress
                     task.processed_leads += 1
                     task.last_lead_id = str(lead.id)
                     
-                    # Save progress every 5 leads to avoid DB overhead but keep UI lively
                     if task.processed_leads % 5 == 0:
                         await task.save()
-                        # Small sleep to yield and prevent blocking event loop entirely
-                        await asyncio.sleep(0.01)
+                    
+                    # Throttling: Wait a bit between leads during bulk sync
+                    # webhook.site and other test tools have low limits
+                    await asyncio.sleep(5.0)
 
+                await task.save()
+                logger.info(f"Finished batch. Total processed: {task.processed_leads}")
+
+        except Exception as e:
+            logger.error(f"FATAL ERROR in run_bulk_sync: {str(e)}", exc_info=True)
+            if 'task' in locals() and task:
+                task.status = SyncTaskStatus.FAILED
+                task.error_message = str(e)
                 await task.save()
 
         except Exception as e:
@@ -90,8 +108,7 @@ class IntegrationService:
                 task.error_message = str(e)
                 await task.save()
 
-    @staticmethod
-    async def dispatch_lead_event(lead_id: str, event_type: WebhookEvent):
+    async def dispatch_lead_event(self, lead_id: str, event_type: WebhookEvent):
         """
         Fetches the lead and dispatches data to all active webhooks subscribed to the event_type.
         Designed to be run as a FastAPI BackgroundTask.
@@ -132,13 +149,17 @@ class IntegrationService:
 
             async with httpx.AsyncClient(timeout=10.0) as client:
                 for webhook in webhooks:
-                    await IntegrationService._send_webhook(client, webhook, payload)
+                    status_code = await self._send_webhook(client, webhook, payload)
+                    
+                    # Smart Backoff: If we hit a rate limit (429), sleep longer
+                    if status_code == 429:
+                        logger.warning("Rate limit hit (429). Backing off for 5 seconds...")
+                        await asyncio.sleep(5.0)
 
         except Exception as e:
             logger.error(f"Error in dispatch_lead_event: {str(e)}", exc_info=True)
 
-    @staticmethod
-    async def dispatch_test_event(webhook_id: str):
+    async def dispatch_test_event(self, webhook_id: str):
         """
         Sends a mock lead payload to a specific webhook for testing purposes.
         """
@@ -174,13 +195,12 @@ class IntegrationService:
             }
 
             async with httpx.AsyncClient(timeout=10.0) as client:
-                await IntegrationService._send_webhook(client, webhook, payload)
+                await self._send_webhook(client, webhook, payload)
 
         except Exception as e:
             logger.error(f"Error in dispatch_test_event: {str(e)}", exc_info=True)
 
-    @staticmethod
-    async def _send_webhook(client: httpx.AsyncClient, webhook: WebhookConfig, payload: Dict[str, Any]):
+    async def _send_webhook(self, client: httpx.AsyncClient, webhook: WebhookConfig, payload: Dict[str, Any]) -> Optional[int]:
         headers = {"Content-Type": "application/json"}
         
         # Add HMAC signature if secret key is present
@@ -191,14 +211,19 @@ class IntegrationService:
                 hashlib.sha256
             ).hexdigest()
             headers["X-PingTree-Signature"] = signature
+            headers["X-PingTree-Event"] = payload.get("event", "unknown")
 
         try:
             response = await client.post(webhook.url, json=payload, headers=headers)
             if response.status_code >= 400:
                 logger.warning(f"Webhook {webhook.name} returned {response.status_code} for lead {payload['lead_id']}")
+                if response.status_code == 429:
+                    print(f"RATE LIMIT: Webhook {webhook.name} is rate limiting us (429)")
             else:
                 logger.info(f"Successfully dispatched webhook {webhook.name} for lead {payload['lead_id']}")
+            return response.status_code
         except Exception as e:
             logger.error(f"Failed to send webhook {webhook.name}: {str(e)}")
+            return None
 
 integration_service = IntegrationService()

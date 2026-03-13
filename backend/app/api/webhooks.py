@@ -54,15 +54,14 @@ from app.models.lead import Lead
 
 @router.get("/sync/status")
 async def get_sync_status():
-    # Simplification: One task per user/system for now
-    task = await SyncTask.find_one()
+    task = await SyncTask.find_one({"user_id": "system"})
     if not task:
         return {"status": "idle", "processed_leads": 0, "total_leads": 0}
     return task
 
 @router.post("/sync/start")
 async def start_sync(background_tasks: BackgroundTasks):
-    task = await SyncTask.find_one()
+    task = await SyncTask.find_one({"user_id": "system"})
     now = datetime.utcnow()
     
     if not task:
@@ -84,9 +83,11 @@ async def start_sync(background_tasks: BackgroundTasks):
              task.total_leads = await Lead.find({"created_at": {"$lte": now}}).count()
              task.last_lead_id = None
         
-        # Note: If it was PAUSED, we do NOT change started_at, 
-        # so it continues syncing exactly the same "snapshot" of leads.
-        
+        # Ensure started_at exists even for old tasks
+        if not task.started_at:
+             task.started_at = now
+             task.total_leads = await Lead.find({"created_at": {"$lte": now}}).count()
+
         task.status = SyncTaskStatus.RUNNING
         task.updated_at = now
         await task.save()
@@ -96,7 +97,7 @@ async def start_sync(background_tasks: BackgroundTasks):
 
 @router.post("/sync/pause")
 async def pause_sync():
-    task = await SyncTask.find_one()
+    task = await SyncTask.find_one({"user_id": "system"})
     if not task:
         raise HTTPException(status_code=404, detail="No sync task found")
     
@@ -107,13 +108,13 @@ async def pause_sync():
 
 @router.post("/sync/reset")
 async def reset_sync():
-    task = await SyncTask.find_one()
+    task = await SyncTask.find_one({"user_id": "system"})
     if task:
         now = datetime.utcnow()
         task.status = SyncTaskStatus.IDLE
         task.processed_leads = 0
         task.last_lead_id = None
-        task.started_at = now # Set new boundary for next play
+        task.started_at = now
         task.total_leads = await Lead.find({"created_at": {"$lte": now}}).count()
         task.updated_at = now
         await task.save()
