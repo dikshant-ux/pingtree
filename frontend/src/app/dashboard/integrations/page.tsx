@@ -90,7 +90,7 @@ export default function IntegrationsPage() {
 
     const fetchSyncStatus = async () => {
         try {
-            const res = await api.get('/webhooks/sync/status');
+            const res = await api.get('/webhooks/sync/status/');
             setSyncTask(res.data);
         } catch (err) {
             console.error("Failed to fetch sync status", err);
@@ -99,7 +99,7 @@ export default function IntegrationsPage() {
 
     const handleSyncStart = async () => {
         try {
-            await api.post('/webhooks/sync/start');
+            await api.post('/webhooks/sync/start/');
             toast.success("Sync started");
             fetchSyncStatus();
         } catch (err) {
@@ -109,7 +109,7 @@ export default function IntegrationsPage() {
 
     const handleSyncPause = async () => {
         try {
-            await api.post('/webhooks/sync/pause');
+            await api.post('/webhooks/sync/pause/');
             toast.info("Sync paused");
             fetchSyncStatus();
         } catch (err) {
@@ -120,7 +120,7 @@ export default function IntegrationsPage() {
     const handleSyncReset = async () => {
         if (!confirm("Reset sync progress? This will allow you to start from the beginning.")) return;
         try {
-            await api.post('/webhooks/sync/reset');
+            await api.post('/webhooks/sync/reset/');
             toast.success("Sync reset to 0");
             fetchSyncStatus();
         } catch (err) {
@@ -131,7 +131,7 @@ export default function IntegrationsPage() {
     const fetchWebhooks = async () => {
         try {
             setLoading(true);
-            const res = await api.get('/webhooks');
+            const res = await api.get('/webhooks/');
             setWebhooks(res.data);
         } catch (err) {
             toast.error("Failed to fetch webhooks");
@@ -146,7 +146,7 @@ export default function IntegrationsPage() {
             return;
         }
         try {
-            await api.post('/webhooks', formData);
+            await api.post('/webhooks/', formData);
             toast.success("Webhook created successfully");
             setIsCreateOpen(false);
             resetForm();
@@ -158,7 +158,7 @@ export default function IntegrationsPage() {
 
     const handleUpdate = async () => {
         try {
-            await api.put(`/webhooks/${currentWebhook._id}`, formData);
+            await api.put(`/webhooks/${currentWebhook._id}/`, formData);
             toast.success("Webhook updated successfully");
             setIsEditOpen(false);
             resetForm();
@@ -171,7 +171,7 @@ export default function IntegrationsPage() {
     const handleDelete = async (id: string) => {
         if (!confirm("Are you sure you want to delete this integration?")) return;
         try {
-            await api.delete(`/webhooks/${id}`);
+            await api.delete(`/webhooks/${id}/`);
             toast.success("Webhook deleted");
             fetchWebhooks();
         } catch (err) {
@@ -182,7 +182,7 @@ export default function IntegrationsPage() {
     const handleTest = async (id: string) => {
         try {
             toast.info("Sending test payload...");
-            await api.post(`/webhooks/${id}/test`);
+            await api.post(`/webhooks/${id}/test/`);
             toast.success("Test signal sent successfully");
         } catch (err: any) {
             toast.error(`Test failed: ${err.response?.data?.detail || err.message}`);
