@@ -238,6 +238,7 @@ export default function IngestionPage() {
     data-api-key="${apiKey || 'YOUR_API_KEY'}"
     data-form-id="${form._id}"
     data-container-id="pt-lead-form"
+    data-primary-color="${form.primary_color || '#28a745'}"
 />`;
 
 
