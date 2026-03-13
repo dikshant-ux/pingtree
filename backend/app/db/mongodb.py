@@ -9,8 +9,6 @@ from app.models.form import LeadForm
 from app.models.validation import LeadValidationConfig
 from app.models.domain_mapping import DomainTokenMapping
 from app.models.counter import Counter
-from app.models.webhook import WebhookConfig
-from app.models.sync_task import SyncTask
 
 async def init_db():
     client = AsyncIOMotorClient(
@@ -20,4 +18,5 @@ async def init_db():
     )
     db = client[settings.DATABASE_NAME]
     
+    await init_beanie(database=db, document_models=[User, Buyer, Lead, LeadForm, LeadValidationConfig, DomainTokenMapping, Counter])
     await init_beanie(database=db, document_models=[User, Buyer, Lead, LeadForm, LeadValidationConfig, DomainTokenMapping, Counter, WebhookConfig, SyncTask])

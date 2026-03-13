@@ -11,9 +11,9 @@ app = FastAPI(
     openapi_url=f"{settings.API_V1_STR}/openapi.json"
 )
 
-from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
-
 # Set up CORS
+# Set up CORS
+# For Public Lead Ingestion, we should allow any origin
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -21,9 +21,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# Trust proxy headers (e.g. X-Forwarded-Proto) for VPS/Nginx
-app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")
 
 # Static Files for JS Tracking Script
 from fastapi.staticfiles import StaticFiles

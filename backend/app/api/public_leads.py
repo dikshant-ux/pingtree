@@ -1,10 +1,8 @@
-from fastapi import APIRouter, Header, HTTPException, status, Request, BackgroundTasks
+from fastapi import APIRouter, Header, HTTPException, status, Request
 from app.models.user import User
 from app.models.form import LeadForm
 from app.services.ping.auction_engine import auction_engine
 from app.models.lead import LeadStatus
-from app.models.webhook import WebhookEvent
-from app.services.integration_service import integration_service
 from app.core.config import settings
 from app.core.http_client import http_client_manager
 from app.core.security import decrypt_secret
@@ -18,7 +16,6 @@ router = APIRouter()
 async def public_ingest_lead(
     request: Request,
     lead_data: Dict[str, Any],
-    background_tasks: BackgroundTasks,
     api_key: Optional[str] = Header(None, alias="X-API-Key")
 ):
     start_time = time.time()
@@ -125,7 +122,6 @@ async def public_ingest_lead(
                 recaptcha_token = lead_data.pop("g-recaptcha-response", None)
                 if not recaptcha_token:
                     lead = await auction_engine.create_lead(lead_data, LeadStatus.INVALID, trace, start_time, metadata)
-                    background_tasks.add_task(integration_service.dispatch_lead_event, str(lead.id), WebhookEvent.LEAD_REJECTED)
                     return await generate_response(status="Invalid Lead", lead_id=str(lead.id), reason="reCAPTCHA Token Required")
                 
                 # Determine which secret key to use (Custom vs Global)
@@ -148,7 +144,6 @@ async def public_ingest_lead(
                 verify_data = verify_res.json()
                 if not verify_data.get("success"):
                     lead = await auction_engine.create_lead(lead_data, LeadStatus.INVALID, trace, start_time, metadata)
-                    background_tasks.add_task(integration_service.dispatch_lead_event, str(lead.id), WebhookEvent.LEAD_REJECTED)
                     return await generate_response(status="Invalid Lead", lead_id=str(lead.id), reason="reCAPTCHA Verification Failed")
                 
                 trace.append({
@@ -199,15 +194,10 @@ async def public_ingest_lead(
 
     if any_invalid:
         lead = await auction_engine.create_lead(lead_data, LeadStatus.INVALID, trace, start_time, metadata)
-        background_tasks.add_task(integration_service.dispatch_lead_event, str(lead.id), WebhookEvent.LEAD_REJECTED)
         return await generate_response(status="Invalid Lead", lead_id=str(lead.id), reason="Validation Failed")
 
     # Execute Auction
     result = await auction_engine.run_auction(lead_data, metadata=metadata, trace=trace)
-    
-    # Dispatch Webhook based on outcome
-    event_type = WebhookEvent.LEAD_SOLD if result.status == LeadStatus.SOLD else WebhookEvent.LEAD_UNSOLD
-    background_tasks.add_task(integration_service.dispatch_lead_event, str(result.id), event_type)
     
     return await generate_response(
         status=result.status.value if hasattr(result.status, 'value') else result.status,
