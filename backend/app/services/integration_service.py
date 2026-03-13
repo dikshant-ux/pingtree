@@ -68,45 +68,54 @@ class IntegrationService:
                     break
                 
                 for lead in leads:
-                    # Determine event
+                    # Re-check status before each lead to honor PAUSE immediately
+                    task = await SyncTask.find_one({"user_id": user_id})
+                    if not task or task.status != SyncTaskStatus.RUNNING:
+                        logger.info(f"Loop interrupted: task is {task.status if task else 'missing'}")
+                        return
+
+                    # Determine event type
                     event_type = WebhookEvent.LEAD_REJECTED
                     if lead.status == LeadStatus.SOLD:
                         event_type = WebhookEvent.LEAD_SOLD
                     elif lead.status == LeadStatus.UNSOLD:
                         event_type = WebhookEvent.LEAD_UNSOLD
                     
-                    # Dispatch and check for rate limits
-                    # We collect results to see if any webhook is rate limiting us
-                    # For simplicity, we check if the last dispatch hit a 429
+                    # Dispatch to external webhooks
                     await self.dispatch_lead_event(str(lead.id), event_type)
                     
-                    # Update progress
+                    # Track progress
                     task.processed_leads += 1
                     task.last_lead_id = str(lead.id)
                     
+                    # Atomic update: only touch progress fields, NOT status
                     if task.processed_leads % 5 == 0:
-                        await task.save()
+                        await task.set({
+                            SyncTask.processed_leads: task.processed_leads,
+                            SyncTask.last_lead_id: task.last_lead_id,
+                            SyncTask.updated_at: datetime.utcnow()
+                        })
                     
-                    # Throttling: Wait a bit between leads during bulk sync
-                    # webhook.site and other test tools have low limits
+                    # Throttling delay
                     await asyncio.sleep(5.0)
 
-                await task.save()
+                # Final batch save (atomic)
+                await task.set({
+                    SyncTask.processed_leads: task.processed_leads,
+                    SyncTask.last_lead_id: task.last_lead_id,
+                    SyncTask.updated_at: datetime.utcnow()
+                })
                 logger.info(f"Finished batch. Total processed: {task.processed_leads}")
 
         except Exception as e:
-            logger.error(f"FATAL ERROR in run_bulk_sync: {str(e)}", exc_info=True)
+            logger.error(f"CRITICAL ERROR in run_bulk_sync: {str(e)}")
             if 'task' in locals() and task:
-                task.status = SyncTaskStatus.FAILED
-                task.error_message = str(e)
-                await task.save()
-
-        except Exception as e:
-            logger.error(f"Error in run_bulk_sync: {str(e)}", exc_info=True)
-            if 'task' in locals():
-                task.status = SyncTaskStatus.FAILED
-                task.error_message = str(e)
-                await task.save()
+                # Here we explicitly WANT to update status
+                await task.set({
+                    SyncTask.status: SyncTaskStatus.FAILED,
+                    SyncTask.error_message: str(e),
+                    SyncTask.updated_at: datetime.utcnow()
+                })
 
     async def dispatch_lead_event(self, lead_id: str, event_type: WebhookEvent):
         """
