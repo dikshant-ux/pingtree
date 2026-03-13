@@ -13,8 +13,9 @@ api_router.include_router(public_forms.router, prefix="/public/forms", tags=["pu
 api_router.include_router(public_banks.router, prefix="/public/banks", tags=["public"])
 api_router.include_router(forms.router, prefix="/forms", tags=["forms"])
 
-from app.api import domain_mappings
+from app.api import domain_mappings, webhooks
 api_router.include_router(domain_mappings.router, prefix="/domain-mappings", tags=["domain-mappings"])
+api_router.include_router(webhooks.router, prefix="/webhooks", tags=["webhooks"])
 
 # Test Routes (for local verification)
 from app.api import test_routes

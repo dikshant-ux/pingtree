@@ -24,7 +24,7 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { LayoutDashboard, Users, BarChart3, PanelLeftClose, PanelLeftOpen, LogOut, User, Settings, List, GitBranch, Terminal, ShieldCheck } from 'lucide-react'
+import { LayoutDashboard, Users, BarChart3, PanelLeftClose, PanelLeftOpen, LogOut, User, Settings, List, GitBranch, Terminal, ShieldCheck, Share2 } from 'lucide-react'
 
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
     isMobile?: boolean;
@@ -64,6 +64,7 @@ export function Sidebar({ className, isMobile }: SidebarProps) {
         { label: 'Ingestion', href: '/dashboard/ingestion', icon: Terminal },
         { label: 'Validation', href: '/dashboard/validation', icon: ShieldCheck },
         { label: 'Reports', href: '/dashboard/reports', icon: BarChart3 },
+        { label: 'Integrations', href: '/dashboard/integrations', icon: Share2 },
         { label: 'Settings', href: '/dashboard/settings', icon: Settings },
     ]
 
