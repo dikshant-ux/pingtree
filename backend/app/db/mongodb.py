@@ -19,4 +19,3 @@ async def init_db():
     db = client[settings.DATABASE_NAME]
     
     await init_beanie(database=db, document_models=[User, Buyer, Lead, LeadForm, LeadValidationConfig, DomainTokenMapping, Counter])
-    await init_beanie(database=db, document_models=[User, Buyer, Lead, LeadForm, LeadValidationConfig, DomainTokenMapping, Counter, WebhookConfig, SyncTask])
