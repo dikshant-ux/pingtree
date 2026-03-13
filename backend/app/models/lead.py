@@ -32,6 +32,7 @@ class Lead(Document):
     auction_trace: List[Dict[str, Any]] = [] # Detailed auction logs
     
     # Tracking Fields
+    user_id: Optional[str] = None  # For webhook routing
     form_id: Optional[str] = None
     source_domain: Optional[str] = None
     source_url: Optional[str] = None

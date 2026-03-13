@@ -1,3 +1,4 @@
+import asyncio
 from fastapi import APIRouter, Header, HTTPException, status, Request
 from app.models.user import User
 from app.models.form import LeadForm
@@ -121,7 +122,9 @@ async def public_ingest_lead(
             if form and getattr(form, 'recaptcha_enabled', False):
                 recaptcha_token = lead_data.pop("g-recaptcha-response", None)
                 if not recaptcha_token:
+                    from app.services.webhook_service import fire_webhooks_for_lead
                     lead = await auction_engine.create_lead(lead_data, LeadStatus.INVALID, trace, start_time, metadata)
+                    asyncio.create_task(fire_webhooks_for_lead(lead))
                     return await generate_response(status="Invalid Lead", lead_id=str(lead.id), reason="reCAPTCHA Token Required")
                 
                 # Determine which secret key to use (Custom vs Global)
@@ -143,7 +146,9 @@ async def public_ingest_lead(
                 )
                 verify_data = verify_res.json()
                 if not verify_data.get("success"):
+                    from app.services.webhook_service import fire_webhooks_for_lead
                     lead = await auction_engine.create_lead(lead_data, LeadStatus.INVALID, trace, start_time, metadata)
+                    asyncio.create_task(fire_webhooks_for_lead(lead))
                     return await generate_response(status="Invalid Lead", lead_id=str(lead.id), reason="reCAPTCHA Verification Failed")
                 
                 trace.append({
@@ -193,7 +198,9 @@ async def public_ingest_lead(
     metadata["validation_results"] = validation_results
 
     if any_invalid:
+        from app.services.webhook_service import fire_webhooks_for_lead
         lead = await auction_engine.create_lead(lead_data, LeadStatus.INVALID, trace, start_time, metadata)
+        asyncio.create_task(fire_webhooks_for_lead(lead))
         return await generate_response(status="Invalid Lead", lead_id=str(lead.id), reason="Validation Failed")
 
     # Execute Auction

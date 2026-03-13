@@ -15,6 +15,7 @@ from app.services.ping.filter_engine import FilterEngine
 from app.services.ping.ranking_engine import RankingEngine
 from app.services.ping.buyer_client import BuyerClient
 from app.services.ping.metrics_engine import MetricsEngine
+from app.services.webhook_service import fire_webhooks_for_lead
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +52,9 @@ class AuctionEngine:
         # 2. Dedupe Check
         if await DuplicateDetectionEngine.is_duplicate(lead_data):
             add_trace("Dedupe", "Rejected", details="Duplicate lead detected")
-            return await self.create_lead(lead_data, LeadStatus.REJECTED, trace, start_time, metadata)
+            lead = await self.create_lead(lead_data, LeadStatus.REJECTED, trace, start_time, metadata)
+            asyncio.create_task(fire_webhooks_for_lead(lead))
+            return lead
             
         # 3. Fetch Candidates & Group by Tier
         buyers = await Buyer.find(Buyer.status == BuyerStatus.ACTIVE).to_list()
@@ -166,9 +169,12 @@ class AuctionEngine:
                 await lead.save()
                 
                 await DuplicateDetectionEngine.register_lead(lead_data)
-                
+
                 asyncio.create_task(MetricsEngine.update_metrics(str(buyer.id), bid["price"], True, is_post=True))
-                
+
+                # Fire webhooks for matching configurations (fire-and-forget)
+                asyncio.create_task(fire_webhooks_for_lead(lead))
+
                 return lead
             
             # If all posts failed in this tier
@@ -177,11 +183,13 @@ class AuctionEngine:
             
         # If we get here, no one bought it
         add_trace("Completion", "Unsold", details="All tiers exhausted")
-        
+
         # Logical Fix: Register duplicate even if rejected to prevent spam execution
         await DuplicateDetectionEngine.register_lead(lead_data, lookback_days=30)
-        
-        return await self.create_lead(lead_data, LeadStatus.UNSOLD, trace, start_time, metadata)
+
+        lead = await self.create_lead(lead_data, LeadStatus.UNSOLD, trace, start_time, metadata)
+        asyncio.create_task(fire_webhooks_for_lead(lead))
+        return lead
 
     async def ping_safe(self, buyer: Buyer, lead_data: Dict[str, Any], metadata: Dict[str, Any] = {}):
         try:
@@ -219,6 +227,7 @@ class AuctionEngine:
                 latency_ms=latency,
                 trace=trace,
                 quality_score=data.get("quality_score", 0.0),
+                user_id=metadata.get("user_id"),
                 form_id=metadata.get("form_id"),
                 source_domain=metadata.get("source_domain"),
                 source_url=metadata.get("source_url"),
