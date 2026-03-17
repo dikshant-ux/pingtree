@@ -149,7 +149,7 @@ async def get_recent_leads(
     status: Optional[str] = None,
     search: Optional[str] = None
 ):
-    skip = (page - 1) * limit
+    skip = max(0, (page - 1) * limit)
     
     query = {}
     if source and source != "all":
