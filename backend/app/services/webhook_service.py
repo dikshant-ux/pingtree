@@ -11,7 +11,29 @@ import httpx
 from app.models.lead import Lead
 from app.models.webhook import Webhook
 
+import asyncio
+from app.core.http_client import http_client_manager
+
 logger = logging.getLogger(__name__)
+
+
+async def _execute_single_webhook(wh: Webhook, payload: Dict[str, Any], headers: Dict[str, str], content_type: str) -> None:
+    """Execute a single webhook POST request with error handling."""
+    client = http_client_manager.get_client()
+    try:
+        if content_type == "application/x-www-form-urlencoded":
+            # Flatten payload for form data
+            form_data = {k: ("" if v is None else str(v)) for k, v in payload.items()}
+            resp = await client.post(wh.url, data=form_data, headers=headers, timeout=15.0)
+        else:
+            resp = await client.post(wh.url, json=payload, headers=headers, timeout=15.0)
+
+        if resp.status_code >= 400:
+            logger.warning(f"Webhook {wh.name} ({wh.url}) returned {resp.status_code}: {resp.text[:200]}")
+        else:
+            logger.info(f"Webhook {wh.name} fired successfully")
+    except Exception as e:
+        logger.warning(f"Webhook {wh.name} ({wh.url}) failed: {e}")
 
 
 def build_webhook_payload(lead: Lead) -> Dict[str, Any]:
@@ -114,8 +136,7 @@ def _matches_filters(webhook: Webhook, lead: Lead, status_val: str) -> bool:
 
 async def fire_webhooks_for_lead(lead: Lead) -> None:
     """
-    Find active webhooks for the lead's user that match filters, and POST payload to each.
-    Runs fire-and-forget (non-blocking); errors are logged only.
+    Find active webhooks for the lead's user that match filters, and POST payload to each in parallel.
     """
     user_id = getattr(lead, "user_id", None)
     if not user_id:
@@ -127,36 +148,27 @@ async def fire_webhooks_for_lead(lead: Lead) -> None:
         Webhook.is_active == True
     ).to_list()
 
+    if not webhooks:
+        return
+
     status_val = lead.status.value if hasattr(lead.status, "value") else str(lead.status)
     payload = build_webhook_payload(lead)
 
+    tasks = []
     for wh in webhooks:
         if not _matches_filters(wh, lead, status_val):
-            logger.debug(f"Webhook {wh.name} skipped: lead did not match filters")
+            logger.debug(f"Webhook {wh.name} skipped: filters mismatch")
             continue
 
-        try:
-            async with httpx.AsyncClient(timeout=15.0) as client:
-                content_type = getattr(wh, "content_type", None) or "application/json"
-                headers = {**wh.headers}
-                if "Content-Type" not in headers:
-                    headers["Content-Type"] = content_type
+        content_type = getattr(wh, "content_type", None) or "application/json"
+        headers = {**wh.headers}
+        if "Content-Type" not in headers:
+            headers["Content-Type"] = content_type
 
-                if content_type == "application/x-www-form-urlencoded":
-                    # Flatten payload to key=value strings for form data
-                    form_data = {
-                        k: ("" if v is None else str(v))
-                        for k, v in payload.items()
-                    }
-                    resp = await client.post(wh.url, data=form_data, headers=headers)
-                else:
-                    resp = await client.post(wh.url, json=payload, headers=headers)
-                if resp.status_code >= 400:
-                    logger.warning(
-                        f"Webhook {wh.name} ({wh.url}) returned {resp.status_code}: {resp.text[:200]}"
-                    )
-                else:
-                    logger.info(f"Webhook {wh.name} fired successfully for lead {lead.id}")
-        except Exception as e:
-            logger.warning(f"Webhook {wh.name} ({wh.url}) failed: {e}")
+        tasks.append(_execute_single_webhook(wh, payload, headers, content_type))
+
+    if tasks:
+        # Fire all webhooks in parallel
+        await asyncio.gather(*tasks, return_exceptions=True)
+        logger.info(f"Fired {len(tasks)} webhooks for lead {lead.id}")
 
