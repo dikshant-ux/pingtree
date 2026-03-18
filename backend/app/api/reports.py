@@ -171,9 +171,13 @@ async def get_recent_leads(
             {"readable_id": search_regex},
             {"_id": search_regex},
             {"lead_data.email": search_regex},
+            {"lead_data.Email": search_regex},
             {"lead_data.phone": search_regex},
+            {"lead_data.Phone": search_regex},
             {"lead_data.first_name": search_regex},
+            {"lead_data.First_Name": search_regex},
             {"lead_data.last_name": search_regex},
+            {"lead_data.Last_Name": search_regex},
             {"lead_data.FirstName": search_regex},
             {"lead_data.LastName": search_regex}
         ]
