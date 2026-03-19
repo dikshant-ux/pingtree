@@ -87,7 +87,10 @@ async def public_ingest_lead(
     # Helper for unified response and redirection
     async def generate_response(status: str, lead_id: Optional[str] = None, processed_at: Optional[datetime] = None, redirect_url: Optional[str] = None, reason: Optional[str] = None):
         final_redirect = redirect_url
-        if status != "sold":
+        if status == "sold" and lead_id:
+            # Use Internal Redirect Proxy for Sold leads
+            final_redirect = f"{settings.BASE_URL}{settings.API_V1_STR}/public/r/{lead_id}"
+        elif status != "sold":
             # 1. Check form-specific override
             if metadata.get("form_id"):
                 try:

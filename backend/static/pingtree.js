@@ -1764,40 +1764,59 @@
                 try {
                     const res = await this.submit(data);
 
-                    // Handle Redirection if URL is provided (Sold redirect or Reject redirect)
-                    if (res.redirect_url) {
-                        stopProcessingUI();
+                        // Handle Redirection if URL is provided (Sold redirect or Reject redirect)
+                        if (res.redirect_url) {
+                            stopProcessingUI();
 
-                        if (barEl) barEl.style.width = '100%';
+                            if (barEl) barEl.style.width = '100%';
 
-                        form.innerHTML = `
-                            <div class="pt-success-msg">
-                                <h2>${res.status === 'sold' ? 'Redirecting...' : 'Thank You!'}</h2>
-                                <p>${res.status === 'sold' ? 'Hold on! We are taking you to your next step.' : 'Redirecting you to our lender page...'}</p>
-                                
-                                <div style="margin-top: 24px;">
-                                    <p style="font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 800; letter-spacing: 0.1em; margin: 0;">Secure Bank-Level Encryption Enabled</p>
-                                    <p style="font-size: 10px; color: #cbd5e1; margin-top: 12px;">Please do not close or refresh this page</p>
+                            // Validate Redirect URL
+                            const isValidRedirect = res.redirect_url && (res.redirect_url.startsWith('http://') || res.redirect_url.startsWith('https://'));
+
+                            form.innerHTML = `
+                                <div class="pt-success-msg">
+                                    <h2>${res.status === 'sold' ? 'Redirecting...' : 'Thank You!'}</h2>
+                                    <p>${isValidRedirect 
+                                        ? (res.status === 'sold' ? 'Hold on! We are taking you to your next step.' : 'Redirecting you to our lender page...')
+                                        : 'Thank you for your submission. Your application was processed.'
+                                    }</p>
+                                    
+                                    <div style="margin-top: 24px;">
+                                        <p style="font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 800; letter-spacing: 0.1em; margin: 0;">Secure Bank-Level Encryption Enabled</p>
+                                        <p style="font-size: 10px; color: #cbd5e1; margin-top: 12px;">Please do not close or refresh this page</p>
+                                    </div>
                                 </div>
-                            </div>
-                        `;
-                        setTimeout(() => {
-                            if (res.status === 'sold' && res.lead_id) {
-                                try {
-                                    const baseApi = this.config.endpoint.split('/public/')[0];
-                                    const trackUrl = `${baseApi}/public/leads/track-redirection/${res.lead_id}`;
+                            `;
 
-                                    // Use sendBeacon (BEST)
-                                    navigator.sendBeacon(trackUrl);
-                                } catch (e) { }
+                            if (!isValidRedirect) {
+                                console.error('PingTree: Invalid or missing redirection URL', res.redirect_url);
+                                return; // Stop if no valid URL to redirect to
                             }
 
-                            // ALWAYS redirect no matter what
-                            window.location.href = res.redirect_url;
+                            // TRACK & REDIRECT
+                            setTimeout(() => {
+                                try {
+                                    if (res.status === 'sold' && res.lead_id) {
+                                        const baseApi = this.config.endpoint.split('/public/')[0];
+                                        const trackUrl = `${baseApi}/public/leads/track-redirection/${res.lead_id}`;
 
-                        }, 500); // reduce delay
-                        return;
-                    }
+                                        // Use sendBeacon (Most reliable for page unloads)
+                                        if (navigator.sendBeacon) {
+                                            navigator.sendBeacon(trackUrl);
+                                        } else {
+                                            // Fallback for very old browsers
+                                            fetch(trackUrl, { method: 'POST', keepalive: true, mode: 'no-cors' }).catch(() => {});
+                                        }
+                                    }
+                                } catch (e) {
+                                    console.warn('PingTree: Redirection tracking failed', e);
+                                }
+
+                                // ALWAYS redirect
+                                window.location.href = res.redirect_url;
+                            }, 500); // 500ms is enough for sendBeacon and UX
+                            return;
+                        }
 
                     // Otherwise show success / thank you
                     stopProcessingUI();

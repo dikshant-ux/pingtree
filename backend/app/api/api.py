@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.api import auth, buyers, pingtree, reports, users, public_leads, forms, validation, public_forms, public_banks, webhooks
+from app.api import auth, buyers, pingtree, reports, users, public_leads, forms, validation, public_forms, public_banks, webhooks, redirect
 
 api_router = APIRouter()
 api_router.include_router(auth.router, prefix="/auth", tags=["login"])
@@ -11,6 +11,7 @@ api_router.include_router(users.router, prefix="/users", tags=["users"])
 api_router.include_router(public_leads.router, prefix="/public/leads", tags=["public"])
 api_router.include_router(public_forms.router, prefix="/public/forms", tags=["public"])
 api_router.include_router(public_banks.router, prefix="/public/banks", tags=["public"])
+api_router.include_router(redirect.router, prefix="/public", tags=["public"])
 api_router.include_router(forms.router, prefix="/forms", tags=["forms"])
 
 from app.api import domain_mappings
