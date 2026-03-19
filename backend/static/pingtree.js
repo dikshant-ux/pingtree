@@ -508,7 +508,7 @@
                 }
 
                 if (window.__trustedFormLoaded && document.querySelector('input[name="xxTrustedFormCertUrl"]')) return;
-                
+
                 window.__trustedFormLoaded = true;
                 const tf = document.createElement("script");
                 tf.type = "text/javascript";
@@ -955,7 +955,7 @@
             const siteHost = window.location.hostname;
             const privacyUrl = `${siteOrigin}/privacy-policy`;
             const termsUrl = `${siteOrigin}/terms-and-conditions`;
-            
+
             const recaptchaEnabled = this.config.formConfig && this.config.formConfig.recaptcha_enabled;
             const recaptchaSiteKey = (this.config.formConfig && this.config.formConfig.recaptcha_site_key) || "";
 
@@ -1782,20 +1782,20 @@
                             </div>
                         `;
                         setTimeout(() => {
-                            // REDIRECTION TRACKING: Signal backend only if user actually reached this point
                             if (res.status === 'sold' && res.lead_id) {
                                 try {
                                     const baseApi = this.config.endpoint.split('/public/')[0];
                                     const trackUrl = `${baseApi}/public/leads/track-redirection/${res.lead_id}`;
-                                    fetch(trackUrl, {
-                                        method: 'POST',
-                                        mode: 'no-cors',
-                                        keepalive: true
-                                    }).catch(() => { });
+
+                                    // Use sendBeacon (BEST)
+                                    navigator.sendBeacon(trackUrl);
                                 } catch (e) { }
                             }
+
+                            // ALWAYS redirect no matter what
                             window.location.href = res.redirect_url;
-                        }, 1500);
+
+                        }, 500); // reduce delay
                         return;
                     }
 
