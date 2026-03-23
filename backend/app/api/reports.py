@@ -17,7 +17,18 @@ _motor_client = None
 def get_leads_collection():
     global _motor_client
     if _motor_client is None:
-        _motor_client = AsyncIOMotorClient(settings.MONGODB_URL)
+        _motor_client = AsyncIOMotorClient(
+            settings.MONGODB_URL,
+            maxPoolSize=50,
+            minPoolSize=0,
+            connectTimeoutMS=10000,
+            serverSelectionTimeoutMS=5000,
+            socketTimeoutMS=45000,
+            retryReads=True,
+            retryWrites=True,
+            tls=True,
+            tlsAllowInvalidCertificates=True
+        )
     return _motor_client[settings.DATABASE_NAME]["leads"]
 
 def get_date_match(start_date: Optional[datetime], end_date: Optional[datetime]) -> Dict[str, Any]:

@@ -14,12 +14,15 @@ from app.models.webhook import Webhook
 async def init_db():
     client = AsyncIOMotorClient(
         settings.MONGODB_URL,
-        maxPoolSize=500,
-        minPoolSize=10,
-        maxIdleTimeMS=30000,
+        maxPoolSize=200,
+        minPoolSize=0,
         connectTimeoutMS=10000,
+        serverSelectionTimeoutMS=5000,
+        socketTimeoutMS=45000,
         retryReads=True,
-        retryWrites=True
+        retryWrites=True,
+        tls=True,
+        tlsAllowInvalidCertificates=True
     )
     db = client[settings.DATABASE_NAME]
     
