@@ -1,19 +1,47 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import api from '@/lib/api';
 import { Buyer } from '@/types';
-import { Trash2, Pencil, Copy } from 'lucide-react';
+import { Trash2, Pencil, Copy, Search, Plus } from 'lucide-react';
 import { toast } from 'sonner';
+
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table";
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 export default function BuyersPage() {
     const [buyers, setBuyers] = useState<Buyer[]>([]);
     const [loading, setLoading] = useState(true);
+    
+    // Pagination and Search states
+    const [search, setSearch] = useState('');
+    const [debouncedSearch, setDebouncedSearch] = useState('');
+    const [page, setPage] = useState(1);
+    const [pageSize] = useState(10);
 
     useEffect(() => {
         fetchBuyers();
     }, []);
+
+    // Debounce search
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(search);
+            setPage(1); // Reset to page 1 on new search
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [search]);
 
     const fetchBuyers = async () => {
         try {
@@ -62,99 +90,199 @@ export default function BuyersPage() {
         }
     };
 
-    if (loading) return <div className="text-foreground">Loading buyers...</div>;
+    // Derived state for filtering and pagination
+    const filteredBuyers = useMemo(() => {
+        if (!debouncedSearch) return buyers;
+        const lower = debouncedSearch.toLowerCase();
+        return buyers.filter(b => 
+            b.name.toLowerCase().includes(lower) || 
+            b.type.toLowerCase().includes(lower) ||
+            b.status.toLowerCase().includes(lower)
+        );
+    }, [buyers, debouncedSearch]);
+
+    const totalPages = Math.ceil(filteredBuyers.length / pageSize) || 1;
+    const paginatedBuyers = filteredBuyers.slice((page - 1) * pageSize, page * pageSize);
+
+    if (loading && buyers.length === 0) return <div className="p-8 text-center text-muted-foreground">Loading buyers...</div>;
 
     return (
-        <div>
-            <div className="flex items-center justify-between mb-8">
+        <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div>
-                    <h2 className="text-2xl font-bold text-foreground">Buyers</h2>
-                    <p className="text-muted-foreground mt-1">Manage integration partners and ping targets</p>
+                    <h2 className="text-3xl font-bold tracking-tight text-foreground">Buyers</h2>
+                    <p className="text-muted-foreground mt-1 text-sm">Manage integration partners and ping targets</p>
                 </div>
-                <Link
-                    href="/dashboard/buyers/create"
-                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-colors flex items-center shadow-sm"
-                >
-                    <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                    </svg>
-                    Add Buyer
+                <Link href="/dashboard/buyers/create">
+                    <Button className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm flex items-center gap-2">
+                        <Plus className="w-4 h-4" />
+                        Add Buyer
+                    </Button>
                 </Link>
             </div>
 
-            <div className="bg-card border border-border rounded-xl overflow-hidden shadow">
-                <table className="w-full text-left">
-                    <thead className="bg-muted text-muted-foreground text-xs uppercase tracking-wider">
-                        <tr>
-                            <th className="px-6 py-4 font-medium">Name</th>
-                            <th className="px-6 py-4 font-medium">Type</th>
-                            <th className="px-6 py-4 font-medium">Payout</th>
-                            <th className="px-6 py-4 font-medium">Priority</th>
-                            <th className="px-6 py-4 font-medium">Caps (Daily)</th>
-                            <th className="px-6 py-4 font-medium">Status</th>
-                            <th className="px-6 py-4 font-medium text-right">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border">
-                        {buyers.map((buyer) => (
-                            <tr key={buyer._id} className="hover:bg-muted/50 transition-colors">
-                                <td className="px-6 py-4 text-foreground font-medium">{buyer.name}</td>
-                                <td className="px-6 py-4 text-muted-foreground">
-                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-secondary text-secondary-foreground">
-                                        {buyer.type}
-                                    </span>
-                                </td>
-                                <td className="px-6 py-4 text-green-500 font-mono">${buyer.payout}</td>
-                                <td className="px-6 py-4 text-muted-foreground">{buyer.priority}</td>
-                                <td className="px-6 py-4 text-muted-foreground">{buyer.caps.daily_cap > 0 ? buyer.caps.daily_cap : 'Uncapped'}</td>
-                                <td className="px-6 py-4">
-                                    <button
-                                        onClick={() => toggleStatus(buyer._id, buyer.status)}
-                                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium transition-colors ${buyer.status === 'active'
-                                            ? 'bg-green-500/10 text-green-500 border border-green-500/20'
-                                            : 'bg-yellow-500/10 text-yellow-500 border border-yellow-500/20'
-                                            }`}
-                                    >
-                                        {buyer.status}
-                                    </button>
-                                </td>
-                                <td className="px-6 py-4 text-right">
-                                    <div className="flex items-center justify-end space-x-2">
-                                        <button
-                                            onClick={() => cloneBuyer(buyer._id)}
-                                            className="p-2 text-muted-foreground hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
-                                            title="Clone Buyer"
-                                        >
-                                            <Copy className="w-4 h-4" />
-                                        </button>
-                                        <Link
-                                            href={`/dashboard/buyers/${buyer._id}`}
-                                            className="p-2 text-muted-foreground hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition-colors"
-                                            title="Edit Buyer"
-                                        >
-                                            <Pencil className="w-4 h-4" />
-                                        </Link>
-                                        <button
-                                            onClick={() => deleteBuyer(buyer._id)}
-                                            className="p-2 text-muted-foreground hover:text-red-600 hover:bg-red-50 rounded-full transition-colors"
-                                            title="Delete Buyer"
-                                        >
-                                            <Trash2 className="w-4 h-4" />
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}
-                        {buyers.length === 0 && (
-                            <tr>
-                                <td colSpan={7} className="px-6 py-12 text-center text-muted-foreground">
-                                    No buyers found. Click "Add Buyer" to create one.
-                                </td>
-                            </tr>
-                        )}
-                    </tbody>
-                </table>
-            </div>
+            <Card className="shadow-sm overflow-hidden border-slate-200">
+                <CardHeader className="pb-4 bg-slate-50/50 border-b flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                    <div>
+                        <CardTitle className="text-xl">Buyer Directory</CardTitle>
+                        <CardDescription>
+                            Total {buyers.length} buyers configured.
+                        </CardDescription>
+                    </div>
+                    <div className="relative w-full md:w-72">
+                        <Search className="absolute left-2.5 top-[11px] h-3.5 w-3.5 text-muted-foreground" />
+                        <Input
+                            placeholder="Search by name, type, status..."
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            className="pl-9 h-9 text-xs border-slate-200 bg-white shadow-sm focus-visible:ring-indigo-500"
+                        />
+                    </div>
+                </CardHeader>
+                <CardContent className="p-0">
+                    <div className="overflow-x-auto">
+                        <Table>
+                            <TableHeader>
+                                <TableRow className="bg-slate-50 hover:bg-slate-50">
+                                    <TableHead className="font-semibold text-slate-700">Name</TableHead>
+                                    <TableHead className="font-semibold text-slate-700">Type</TableHead>
+                                    <TableHead className="font-semibold text-slate-700">Payout</TableHead>
+                                    <TableHead className="font-semibold text-slate-700">Priority</TableHead>
+                                    <TableHead className="font-semibold text-slate-700">Caps (Daily)</TableHead>
+                                    <TableHead className="font-semibold text-slate-700">Status</TableHead>
+                                    <TableHead className="text-right font-semibold text-slate-700">Actions</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {paginatedBuyers.length === 0 ? (
+                                    <TableRow>
+                                        <TableCell colSpan={7} className="text-center py-16 text-muted-foreground">
+                                            {search ? 'No buyers match your search.' : 'No buyers found. Click "Add Buyer" to create one.'}
+                                        </TableCell>
+                                    </TableRow>
+                                ) : (
+                                    paginatedBuyers.map((buyer) => (
+                                        <TableRow key={buyer._id} className="hover:bg-slate-50/80 transition-colors">
+                                            <TableCell className="font-bold text-slate-800">{buyer.name}</TableCell>
+                                            <TableCell>
+                                                <Badge variant="secondary" className="capitalize text-[10px] font-semibold tracking-wide shadow-sm">
+                                                    {buyer.type}
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell className="font-mono text-emerald-600 font-bold">${buyer.payout}</TableCell>
+                                            <TableCell className="text-slate-600 font-medium">{buyer.priority}</TableCell>
+                                            <TableCell className="text-slate-600">
+                                                {buyer.caps?.daily_cap > 0 ? buyer.caps.daily_cap : <span className="text-muted-foreground italic">Uncapped</span>}
+                                            </TableCell>
+                                            <TableCell>
+                                                <button
+                                                    onClick={() => toggleStatus(buyer._id, buyer.status)}
+                                                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase transition-colors shadow-sm ${
+                                                        buyer.status === 'active'
+                                                            ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 border border-emerald-200'
+                                                            : 'bg-amber-100 text-amber-700 hover:bg-amber-200 border border-amber-200'
+                                                    }`}
+                                                >
+                                                    {buyer.status}
+                                                </button>
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                <div className="flex items-center justify-end space-x-1">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        onClick={() => cloneBuyer(buyer._id)}
+                                                        className="h-8 w-8 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50"
+                                                        title="Clone Buyer"
+                                                    >
+                                                        <Copy className="w-4 h-4" />
+                                                    </Button>
+                                                    <Link href={`/dashboard/buyers/${buyer._id}`}>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-8 w-8 text-slate-400 hover:text-blue-600 hover:bg-blue-50"
+                                                            title="Edit Buyer"
+                                                        >
+                                                            <Pencil className="w-4 h-4" />
+                                                        </Button>
+                                                    </Link>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        onClick={() => deleteBuyer(buyer._id)}
+                                                        className="h-8 w-8 text-slate-400 hover:text-rose-600 hover:bg-rose-50"
+                                                        title="Delete Buyer"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </Button>
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))
+                                )}
+                            </TableBody>
+                        </Table>
+                    </div>
+
+                    {/* Pagination Controls */}
+                    {totalPages > 1 && (
+                        <div className="flex items-center justify-between px-6 py-4 bg-slate-50/30 border-t">
+                            <div className="text-xs font-medium text-slate-500">
+                                Showing <span className="font-bold text-slate-700">{Math.min(filteredBuyers.length, (page - 1) * pageSize + 1)}</span> to <span className="font-bold text-slate-700">{Math.min(filteredBuyers.length, page * pageSize)}</span> of <span className="font-bold text-slate-700">{filteredBuyers.length}</span> results
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-8 text-xs font-semibold"
+                                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                                    disabled={page === 1}
+                                >
+                                    Previous
+                                </Button>
+                                <div className="text-xs font-medium text-slate-600 px-2 lg:hidden">
+                                     Page {page} of {totalPages}
+                                </div>
+                                <div className="hidden lg:flex items-center gap-1 mx-2">
+                                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                                        let pageNum = page;
+                                        if (totalPages <= 5) pageNum = i + 1;
+                                        else if (page <= 3) pageNum = i + 1;
+                                        else if (page >= totalPages - 2) pageNum = totalPages - 4 + i;
+                                        else pageNum = page - 2 + i;
+
+                                        return (
+                                            <Button
+                                                key={pageNum}
+                                                variant={page === pageNum ? "default" : "outline"}
+                                                size="sm"
+                                                className={`w-8 h-8 p-0 text-xs font-bold transition-all ${
+                                                    page === pageNum 
+                                                    ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm' 
+                                                    : 'text-slate-600 hover:bg-slate-100'
+                                                }`}
+                                                onClick={() => setPage(pageNum)}
+                                            >
+                                                {pageNum}
+                                            </Button>
+                                        )
+                                    })}
+                                </div>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-8 text-xs font-semibold"
+                                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                                    disabled={page === totalPages}
+                                >
+                                    Next
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
         </div>
     );
 }
