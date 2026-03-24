@@ -138,7 +138,7 @@ export default function BuyerDetailedTable({ startDate, endDate }: { startDate?:
                                                             Daily Breakdown
                                                         </div>
                                                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                                                            {item.daily_stats.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map((day, idx) => (
+                                                            {item.daily_stats.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 12).map((day, idx) => (
                                                                 <div key={idx} className="bg-white dark:bg-card p-4 rounded-xl border border-border/50 shadow-sm hover:shadow-md transition-shadow">
                                                                     <div className="text-xs text-muted-foreground font-medium mb-2">
                                                                         {format(new Date(day.date), 'EEE, MMM dd, yyyy')}
