@@ -155,7 +155,7 @@ export default function ActivityChart() {
                         type="monotone" 
                         dataKey="total" 
                         stroke="#6366f1" 
-                        strokeWidth={2}
+                        strokeWidth={1}
                         fillOpacity={1} 
                         fill="url(#colorTotal)" 
                         name="Total Leads" 
@@ -166,7 +166,7 @@ export default function ActivityChart() {
                         type="monotone" 
                         dataKey="sold" 
                         stroke="#10b981" 
-                        strokeWidth={2}
+                        strokeWidth={1}
                         fillOpacity={1} 
                         fill="url(#colorSold)" 
                         name="Sold Leads" 
