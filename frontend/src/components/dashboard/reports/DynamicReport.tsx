@@ -267,7 +267,7 @@ export default function DynamicReport({ startDate, endDate }: { startDate?: Date
             acc.sum_emails_good += ((row.email_good_rate || 0) / 100) * (row.total_leads || 0);
             acc.sum_ips_good += ((row.ip_good_rate || 0) / 100) * (row.total_leads || 0);
             acc.sum_phones_good += ((row.phone_good_rate || 0) / 100) * (row.total_leads || 0);
-            acc.sum_redirected += ((row.redirection_rate || 0) / 100) * (row.total_leads || 0);
+            acc.sum_redirected += ((row.redirection_rate || 0) / 100) * (row.sold_leads || 0);
             
             return acc;
         },
@@ -287,7 +287,7 @@ export default function DynamicReport({ startDate, endDate }: { startDate?: Date
         email_good_rate: totals.total_leads > 0 ? (totals.sum_emails_good / totals.total_leads) * 100 : 0,
         ip_good_rate: totals.total_leads > 0 ? (totals.sum_ips_good / totals.total_leads) * 100 : 0,
         phone_good_rate: totals.total_leads > 0 ? (totals.sum_phones_good / totals.total_leads) * 100 : 0,
-        redirection_rate: totals.total_leads > 0 ? (totals.sum_redirected / totals.total_leads) * 100 : 0,
+        redirection_rate: totals.sold_leads > 0 ? (totals.sum_redirected / totals.sold_leads) * 100 : 0,
         avg_price: totals.sold_leads > 0 ? (totals.revenue / totals.sold_leads) : 0,
     };
 

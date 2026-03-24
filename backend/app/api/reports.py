@@ -834,8 +834,8 @@ async def get_dynamic_report(request: DynamicReportRequest) -> Dict[str, Any]:
                 },
                 "redirection_rate": {
                     "$cond": [
-                        {"$gt": ["$total_leads", 0]},
-                        {"$multiply": [{"$divide": ["$redirected", "$total_leads"]}, 100]},
+                        {"$gt": ["$sold_leads", 0]},
+                        {"$multiply": [{"$divide": ["$redirected", "$sold_leads"]}, 100]},
                         0
                     ]
                 }
