@@ -14,7 +14,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, Search } from "lucide-react";
+import { CheckCircle2, Search, Check, ChevronsUpDown } from "lucide-react";
 import { ValidationStatus } from '@/components/leads/ValidationStatus';
 import { Input } from '@/components/ui/input';
 
@@ -25,6 +25,8 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 
 interface Lead {
     _id: string;
@@ -55,6 +57,9 @@ export default function LeadsPage() {
     const [selectedStatus, setSelectedStatus] = useState<string>('all');
     const [search, setSearch] = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
+    const [openStatus, setOpenStatus] = useState(false);
+    const [openSource, setOpenSource] = useState(false);
+    const [openDomain, setOpenDomain] = useState(false);
 
     const fetchLeads = async (pageNum: number, limit: number, source: string, domain: string, status: string, searchTerm: string) => {
         setLoading(true);
@@ -122,47 +127,119 @@ export default function LeadsPage() {
 
                     <div className="flex flex-col gap-1.5 w-full md:w-auto">
                         <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Status</label>
-                        <Select value={selectedStatus} onValueChange={(val) => { setSelectedStatus(val); setPage(1); }}>
-                            <SelectTrigger className="w-full md:w-[150px] h-9 bg-white border-slate-200 text-xs shadow-sm shadow-black/5">
-                                <SelectValue placeholder="All Status" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all" className="text-xs font-bold text-indigo-600">All Status</SelectItem>
-                                <SelectItem value="sold" className="text-xs text-emerald-600 font-semibold">Sold</SelectItem>
-                                <SelectItem value="unsold" className="text-xs text-rose-600 font-semibold">Unsold</SelectItem>
-                                <SelectItem value="Invalid Lead" className="text-xs text-slate-400">Invalid Lead</SelectItem>
-                            </SelectContent>
-                        </Select>
+                        <Popover open={openStatus} onOpenChange={setOpenStatus}>
+                            <PopoverTrigger asChild>
+                                <Button
+                                    variant="outline"
+                                    role="combobox"
+                                    aria-expanded={openStatus}
+                                    className="w-full md:w-[150px] h-9 justify-between bg-white border-slate-200 text-xs shadow-sm shadow-black/5"
+                                >
+                                    {selectedStatus === 'all' ? "All Status" : selectedStatus.charAt(0).toUpperCase() + selectedStatus.slice(1)}
+                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-[200px] p-0" align="start">
+                                <Command>
+                                    <CommandInput placeholder="Search status..." className="h-9 text-xs" />
+                                    <CommandList>
+                                        <CommandEmpty className="text-xs py-2 text-center">No status found.</CommandEmpty>
+                                        <CommandGroup>
+                                            <CommandItem value="all" onSelect={() => { setSelectedStatus("all"); setOpenStatus(false); setPage(1); }} className="text-xs font-bold text-indigo-600">
+                                                <Check className={`mr-2 h-4 w-4 ${selectedStatus === "all" ? "opacity-100" : "opacity-0"}`} />
+                                                All Status
+                                            </CommandItem>
+                                            <CommandItem value="sold" onSelect={() => { setSelectedStatus("sold"); setOpenStatus(false); setPage(1); }} className="text-xs text-emerald-600 font-semibold">
+                                                <Check className={`mr-2 h-4 w-4 ${selectedStatus === "sold" ? "opacity-100" : "opacity-0"}`} />
+                                                Sold
+                                            </CommandItem>
+                                            <CommandItem value="unsold" onSelect={() => { setSelectedStatus("unsold"); setOpenStatus(false); setPage(1); }} className="text-xs text-rose-600 font-semibold">
+                                                <Check className={`mr-2 h-4 w-4 ${selectedStatus === "unsold" ? "opacity-100" : "opacity-0"}`} />
+                                                Unsold
+                                            </CommandItem>
+                                            <CommandItem value="Invalid Lead" onSelect={() => { setSelectedStatus("Invalid Lead"); setOpenStatus(false); setPage(1); }} className="text-xs text-slate-500">
+                                                <Check className={`mr-2 h-4 w-4 ${selectedStatus === "Invalid Lead" ? "opacity-100" : "opacity-0"}`} />
+                                                Invalid Lead
+                                            </CommandItem>
+                                        </CommandGroup>
+                                    </CommandList>
+                                </Command>
+                            </PopoverContent>
+                        </Popover>
                     </div>
 
                     <div className="flex flex-col gap-1.5 w-full md:w-auto">
                         <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Source Field</label>
-                        <Select value={selectedSource} onValueChange={(val) => { setSelectedSource(val); setPage(1); }}>
-                            <SelectTrigger className="w-full md:w-[180px] h-9 bg-white border-slate-200 text-xs shadow-sm shadow-black/5">
-                                <SelectValue placeholder="All Sources" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all" className="text-xs font-bold text-indigo-600">All Sources</SelectItem>
-                                {sources.map(s => (
-                                    <SelectItem key={s} value={s} className="text-xs">{s}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                        <Popover open={openSource} onOpenChange={setOpenSource}>
+                            <PopoverTrigger asChild>
+                                <Button
+                                    variant="outline"
+                                    role="combobox"
+                                    aria-expanded={openSource}
+                                    className="w-full md:w-[180px] h-9 justify-between bg-white border-slate-200 text-xs shadow-sm shadow-black/5"
+                                >
+                                    <span className="truncate">{selectedSource === 'all' ? "All Sources" : selectedSource}</span>
+                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-[200px] p-0" align="start">
+                                <Command>
+                                    <CommandInput placeholder="Search source..." className="h-9 text-xs" />
+                                    <CommandList>
+                                        <CommandEmpty className="text-xs py-2 text-center">No source found.</CommandEmpty>
+                                        <CommandGroup>
+                                            <CommandItem value="all" onSelect={() => { setSelectedSource("all"); setOpenSource(false); setPage(1); }} className="text-xs font-bold text-indigo-600">
+                                                <Check className={`mr-2 h-4 w-4 ${selectedSource === "all" ? "opacity-100" : "opacity-0"}`} />
+                                                All Sources
+                                            </CommandItem>
+                                            {sources.map(s => (
+                                                <CommandItem key={s} value={s} onSelect={() => { setSelectedSource(s); setOpenSource(false); setPage(1); }} className="text-xs">
+                                                    <Check className={`mr-2 h-4 w-4 ${selectedSource === s ? "opacity-100" : "opacity-0"}`} />
+                                                    {s}
+                                                </CommandItem>
+                                            ))}
+                                        </CommandGroup>
+                                    </CommandList>
+                                </Command>
+                            </PopoverContent>
+                        </Popover>
                     </div>
 
                     <div className="flex flex-col gap-1.5 w-full md:w-auto">
                         <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Source Domain</label>
-                        <Select value={selectedDomain} onValueChange={(val) => { setSelectedDomain(val); setPage(1); }}>
-                            <SelectTrigger className="w-full md:w-[180px] h-9 bg-white border-slate-200 text-xs shadow-sm shadow-black/5">
-                                <SelectValue placeholder="All Domains" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all" className="text-xs font-bold text-indigo-600">All Domains</SelectItem>
-                                {domains.map(d => (
-                                    <SelectItem key={d} value={d} className="text-xs">{d}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                        <Popover open={openDomain} onOpenChange={setOpenDomain}>
+                            <PopoverTrigger asChild>
+                                <Button
+                                    variant="outline"
+                                    role="combobox"
+                                    aria-expanded={openDomain}
+                                    className="w-full md:w-[180px] h-9 justify-between bg-white border-slate-200 text-xs shadow-sm shadow-black/5"
+                                >
+                                    <span className="truncate">{selectedDomain === 'all' ? "All Domains" : selectedDomain}</span>
+                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-[200px] p-0" align="start">
+                                <Command>
+                                    <CommandInput placeholder="Search domain..." className="h-9 text-xs" />
+                                    <CommandList>
+                                        <CommandEmpty className="text-xs py-2 text-center">No domain found.</CommandEmpty>
+                                        <CommandGroup>
+                                            <CommandItem value="all" onSelect={() => { setSelectedDomain("all"); setOpenDomain(false); setPage(1); }} className="text-xs font-bold text-indigo-600">
+                                                <Check className={`mr-2 h-4 w-4 ${selectedDomain === "all" ? "opacity-100" : "opacity-0"}`} />
+                                                All Domains
+                                            </CommandItem>
+                                            {domains.map(d => (
+                                                <CommandItem key={d} value={d} onSelect={() => { setSelectedDomain(d); setOpenDomain(false); setPage(1); }} className="text-xs">
+                                                    <Check className={`mr-2 h-4 w-4 ${selectedDomain === d ? "opacity-100" : "opacity-0"}`} />
+                                                    {d}
+                                                </CommandItem>
+                                            ))}
+                                        </CommandGroup>
+                                    </CommandList>
+                                </Command>
+                            </PopoverContent>
+                        </Popover>
                     </div>
 
                     <div className="flex flex-col gap-1.5 w-full md:w-[100px] md:ml-auto">
