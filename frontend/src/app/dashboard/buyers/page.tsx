@@ -108,13 +108,13 @@ export default function BuyersPage() {
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                     <h2 className="text-3xl font-bold tracking-tight text-foreground">Buyers</h2>
                     <p className="text-muted-foreground mt-1 text-sm">Manage integration partners and ping targets</p>
                 </div>
-                <Link href="/dashboard/buyers/create">
-                    <Button className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm flex items-center gap-2">
+                <Link href="/dashboard/buyers/create" className="w-full sm:w-auto">
+                    <Button className="w-full sm:w-auto justify-center bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm flex items-center gap-2">
                         <Plus className="w-4 h-4" />
                         Add Buyer
                     </Button>
@@ -227,11 +227,11 @@ export default function BuyersPage() {
 
                     {/* Pagination Controls */}
                     {totalPages > 1 && (
-                        <div className="flex items-center justify-between px-6 py-4 bg-slate-50/30 border-t">
-                            <div className="text-xs font-medium text-slate-500">
+                        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 sm:px-6 py-4 bg-slate-50/30 border-t">
+                            <div className="text-xs font-medium text-slate-500 text-center sm:text-left">
                                 Showing <span className="font-bold text-slate-700">{Math.min(filteredBuyers.length, (page - 1) * pageSize + 1)}</span> to <span className="font-bold text-slate-700">{Math.min(filteredBuyers.length, page * pageSize)}</span> of <span className="font-bold text-slate-700">{filteredBuyers.length}</span> results
                             </div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-2">
                                 <Button
                                     variant="outline"
                                     size="sm"
