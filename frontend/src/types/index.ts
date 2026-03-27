@@ -84,6 +84,8 @@ export interface DashboardStats {
   total_leads: number;
   sold_leads: number;
   rejected_leads: number;
+  redirected_leads: number;
   total_revenue: number;
   conversion_rate: number;
+  redirection_rate: number;
 }

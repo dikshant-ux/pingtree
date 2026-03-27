@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/select"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface Lead {
     _id: string;
@@ -326,7 +327,18 @@ export default function LeadsPage() {
                                                 ${lead.sold_price.toFixed(2)}
                                             </TableCell>
                                             <TableCell className="text-slate-500 text-xs font-medium">
-                                                {lead.latency_ms}ms
+                                                <TooltipProvider>
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <span className="cursor-help border-b border-dotted border-slate-300">
+                                                                {(lead.latency_ms / 1000).toFixed(2)}s
+                                                            </span>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent>
+                                                            <p>{lead.latency_ms}ms</p>
+                                                        </TooltipContent>
+                                                    </Tooltip>
+                                                </TooltipProvider>
                                             </TableCell>
                                             <TableCell>
                                                 <ValidationStatus results={lead.validation_results || []} />

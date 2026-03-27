@@ -52,6 +52,7 @@ async def get_dashboard_stats(start_date: Optional[datetime] = None, end_date: O
         total_leads = await Lead.find(match_query).count()
         sold_leads = await Lead.find({"status": LeadStatus.SOLD, **match_query}).count()
         rejected_leads = await Lead.find({"status": {"$in": [LeadStatus.REJECTED, LeadStatus.INVALID]}, **match_query}).count()
+        redirected_leads = await Lead.find({"is_redirected": True, **match_query}).count()
         
         pipeline = [
             {"$match": {"status": LeadStatus.SOLD, **match_query}},
@@ -67,8 +68,10 @@ async def get_dashboard_stats(start_date: Optional[datetime] = None, end_date: O
             "total_leads": total_leads,
             "sold_leads": sold_leads,
             "rejected_leads": rejected_leads,
+            "redirected_leads": redirected_leads,
             "total_revenue": total_revenue,
-            "conversion_rate": (sold_leads / total_leads * 100) if total_leads > 0 else 0
+            "conversion_rate": (sold_leads / total_leads * 100) if total_leads > 0 else 0,
+            "redirection_rate": (redirected_leads / sold_leads * 100) if sold_leads > 0 else 0
         }
     except Exception as e:
         logger.error(f"Error in get_dashboard_stats: {str(e)}", exc_info=True)
@@ -83,6 +86,7 @@ async def get_today_stats() -> Dict[str, Any]:
         total_leads = await Lead.find(match_today).count()
         sold_leads = await Lead.find({"status": LeadStatus.SOLD, **match_today}).count()
         rejected_leads = await Lead.find({"status": {"$in": [LeadStatus.REJECTED, LeadStatus.INVALID]}, **match_today}).count()
+        redirected_leads = await Lead.find({"is_redirected": True, **match_today}).count()
         
         pipeline = [
             {"$match": {"status": LeadStatus.SOLD, **match_today}},
@@ -98,8 +102,10 @@ async def get_today_stats() -> Dict[str, Any]:
             "total_leads": total_leads,
             "sold_leads": sold_leads,
             "rejected_leads": rejected_leads,
+            "redirected_leads": redirected_leads,
             "total_revenue": total_revenue,
-            "conversion_rate": (sold_leads / total_leads * 100) if total_leads > 0 else 0
+            "conversion_rate": (sold_leads / total_leads * 100) if total_leads > 0 else 0,
+            "redirection_rate": (redirected_leads / sold_leads * 100) if sold_leads > 0 else 0
         }
     except Exception as e:
         logger.error(f"Error in get_today_stats: {str(e)}", exc_info=True)

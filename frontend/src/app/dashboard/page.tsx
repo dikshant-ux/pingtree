@@ -5,7 +5,7 @@ import api from '@/lib/api';
 import { DashboardStats } from '@/types';
 import ActivityChart from '@/components/dashboard/ActivityChart';
 import RecentLeadsList from '@/components/dashboard/RecentLeadsList';
-import { ArrowUpRight, DollarSign, Activity, Users, CheckCircle, Flame } from 'lucide-react';
+import { ArrowUpRight, DollarSign, Activity, Users, CheckCircle, Flame, ExternalLink, Zap } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 function StatCard({ title, value, subtext, icon: Icon, trend, className, iconColorClass }: any) {
@@ -89,7 +89,7 @@ export default function DashboardPage() {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <StatCard 
                     title="Total Leads" 
                     value={stats.total_leads.toLocaleString()} 
@@ -120,6 +120,21 @@ export default function DashboardPage() {
                     subtext="Today's Conversion"
                     iconColorClass="text-rose-500 dark:text-rose-400"
                     className="border-rose-100/50 shadow-[0_4px_20px_-4px_rgba(244,63,94,0.1)] bg-gradient-to-br from-rose-50/80 to-white dark:from-rose-950/30 dark:to-card"
+                />
+                <StatCard
+                    title="Redirected Leads"
+                    value={stats.redirected_leads.toLocaleString()}
+                    icon={ExternalLink}
+                    iconColorClass="text-blue-600 dark:text-blue-400"
+                    className="border-blue-100/50 shadow-[0_4px_20px_-4px_rgba(37,99,235,0.1)] bg-gradient-to-br from-blue-50/80 to-white dark:from-blue-950/30 dark:to-card"
+                />
+                <StatCard
+                    title="Redirection %"
+                    value={`${stats.redirection_rate.toFixed(1)}%`}
+                    icon={Zap}
+                    subtext="Redirects vs Sold"
+                    iconColorClass="text-cyan-600 dark:text-cyan-400"
+                    className="border-cyan-100/50 shadow-[0_4px_20px_-4px_rgba(8,145,178,0.1)] bg-gradient-to-br from-cyan-50/80 to-white dark:from-cyan-950/30 dark:to-card"
                 />
             </div>
 
