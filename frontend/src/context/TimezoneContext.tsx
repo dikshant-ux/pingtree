@@ -3,14 +3,16 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import api from '@/lib/api';
 
+const TZ_STORAGE_KEY = 'pingtree_timezone';
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface TimezoneContextValue {
     /** IANA timezone string, e.g. "Asia/Kolkata" */
     timezone: string;
-    /** Whether the timezone has been loaded from the server */
+    /** Whether the timezone has been resolved (from DB or browser) */
     tzLoaded: boolean;
-    /** Update the timezone in state + persist to backend */
+    /** Update the timezone in state + localStorage + backend */
     updateTimezone: (tz: string) => Promise<void>;
 }
 
@@ -25,33 +27,55 @@ const TimezoneContext = createContext<TimezoneContextValue>({
 // ─── Provider ─────────────────────────────────────────────────────────────────
 
 export function TimezoneProvider({ children }: { children: ReactNode }) {
-    // Default to browser's local timezone as a best-guess before the API responds
     const browserTz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
-    const [timezone, setTimezone] = useState<string>(browserTz);
-    const [tzLoaded, setTzLoaded] = useState(false);
 
-    // On mount: fetch saved TZ from backend
+    // Priority order for initial timezone:
+    // 1. localStorage (instant, no flicker)
+    // 2. browser TZ (fallback)
+    const getInitialTz = (): string => {
+        if (typeof window === 'undefined') return browserTz;
+        return localStorage.getItem(TZ_STORAGE_KEY) || browserTz;
+    };
+
+    const [timezone, setTimezoneState] = useState<string>(getInitialTz);
+    const [tzLoaded,  setTzLoaded]     = useState(false);
+
+    // Internal setter that always keeps localStorage in sync
+    const applyTimezone = (tz: string) => {
+        setTimezoneState(tz);
+        if (typeof window !== 'undefined') {
+            localStorage.setItem(TZ_STORAGE_KEY, tz);
+        }
+    };
+
+    // On mount: sync with backend (source of truth)
     useEffect(() => {
         const token = localStorage.getItem('token') || sessionStorage.getItem('token');
         if (!token) {
-            setTzLoaded(true); // Not logged in — use browser default
+            // Not logged in — use browser TZ and mark as loaded
+            applyTimezone(browserTz);
+            setTzLoaded(true);
             return;
         }
 
         api.get('/users/me')
             .then(res => {
                 const savedTz: string = res.data?.timezone;
+
                 if (savedTz && savedTz !== 'UTC') {
-                    setTimezone(savedTz);
-                } else if (savedTz === 'UTC') {
-                    // User hasn't set a preference yet — auto-set to browser timezone
-                    // and silently save it (best-effort, non-blocking)
-                    setTimezone(browserTz);
-                    api.patch('/users/me', { timezone: browserTz }).catch(() => {});
+                    // User has a saved TZ → use it
+                    applyTimezone(savedTz);
+                } else {
+                    // User has default 'UTC' or no TZ → auto-detect from browser
+                    // and save it so they don't have to configure it manually
+                    applyTimezone(browserTz);
+                    api.patch('/users/me', { timezone: browserTz }).catch(() => {
+                        // Non-blocking: localStorage already has correct TZ
+                    });
                 }
             })
             .catch(() => {
-                // Network error — keep browser default
+                // Network error — localStorage/browser TZ is already applied
             })
             .finally(() => {
                 setTzLoaded(true);
@@ -59,11 +83,11 @@ export function TimezoneProvider({ children }: { children: ReactNode }) {
     }, []);
 
     /**
-     * Update the timezone both locally and on the server.
-     * Throws if the API call fails so callers can show an error toast.
+     * Update timezone in state, localStorage, and backend.
+     * Throws on API failure so callers can show a toast.
      */
     const updateTimezone = async (tz: string) => {
-        setTimezone(tz);
+        applyTimezone(tz);
         await api.patch('/users/me', { timezone: tz });
     };
 
