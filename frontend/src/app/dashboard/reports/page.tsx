@@ -12,6 +12,9 @@ import { DateRange } from 'react-day-picker';
 import { subDays } from 'date-fns';
 import { TrendingUp, Target, Award, ArrowUpRight, Lightbulb, Package } from 'lucide-react';
 import DynamicReport from '@/components/dashboard/reports/DynamicReport';
+import { useTimezone } from '@/context/TimezoneContext';
+import { zonedStartOfDay, zonedEndOfDay } from '@/lib/timezone';
+
 
 function StatCard({ title, value, subtext, icon: Icon }: { title: string; value: string; subtext?: string; icon: any }) {
     return (
@@ -56,6 +59,7 @@ function InsightCard({ title, label, value, subvalue, color }: { title: string, 
 }
 
 export default function ReportsPage() {
+    const { timezone } = useTimezone();
     const [date, setDate] = useState<DateRange | undefined>({
         from: subDays(new Date(), 30),
         to: new Date(),
@@ -64,13 +68,17 @@ export default function ReportsPage() {
     const [insights, setInsights] = useState<any>(null);
     const [loading, setLoading] = useState(true);
 
+
     useEffect(() => {
         const fetchStats = async () => {
             setLoading(true);
             try {
                 const params = new URLSearchParams();
-                if (date?.from) params.append('start_date', date.from.toISOString());
-                if (date?.to) params.append('end_date', date.to.toISOString());
+                // Use timezone-aware boundaries: start of day in user's TZ for 'from',
+                // end of day in user's TZ for 'to', then convert to UTC for the API.
+                if (date?.from) params.append('start_date', zonedStartOfDay(date.from, timezone).toISOString());
+                if (date?.to)   params.append('end_date',   zonedEndOfDay(date.to, timezone).toISOString());
+
 
                 const [statsRes, insightsRes] = await Promise.all([
                     api.get(`/reports/stats?${params.toString()}`),

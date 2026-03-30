@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
+import { useTimezone } from '@/context/TimezoneContext';
+import { formatInTimezone } from '@/lib/timezone';
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
     Table,
@@ -45,8 +48,10 @@ interface Lead {
 }
 
 export default function LeadsPage() {
+    const { timezone } = useTimezone();
     const [leads, setLeads] = useState<Lead[]>([]);
     const [loading, setLoading] = useState(true);
+
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [totalLeads, setTotalLeads] = useState(0);
@@ -369,7 +374,7 @@ export default function LeadsPage() {
                                                 </Badge>
                                             </TableCell>
                                             <TableCell className="text-slate-500 text-xs font-medium">
-                                                {new Date(lead.created_at).toLocaleString()}
+                                                {formatInTimezone(lead.created_at, timezone, 'datetime')}
                                             </TableCell>
                                             <TableCell className="text-right">
                                                 <Link href={`/dashboard/leads/${lead._id}`}>

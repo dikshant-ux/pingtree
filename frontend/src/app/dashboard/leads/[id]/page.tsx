@@ -12,13 +12,18 @@ import { Button } from '@/components/ui/button';
 import { useBreadcrumbs } from '@/context/BreadcrumbContext';
 import { usePathname } from 'next/navigation';
 import { ValidationStatus } from '@/components/leads/ValidationStatus';
+import { useTimezone } from '@/context/TimezoneContext';
+import { formatInTimezone } from '@/lib/timezone';
+
 
 export default function LeadDetailsPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
     const pathname = usePathname();
     const { setCustomLabel } = useBreadcrumbs();
+    const { timezone } = useTimezone();
     const [lead, setLead] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+
 
     useEffect(() => {
         const fetchLead = async () => {
@@ -56,7 +61,7 @@ export default function LeadDetailsPage({ params }: { params: Promise<{ id: stri
                         </Badge>
                     </h2>
                     <p className="text-muted-foreground">
-                        Processed on {new Date(lead.created_at).toLocaleString()}
+                        Processed on {formatInTimezone(lead.created_at, timezone, 'datetime')}
                     </p>
                 </div>
             </div>

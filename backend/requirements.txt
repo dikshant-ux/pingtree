@@ -12,3 +12,4 @@ httpx
 pydantic-settings
 pyotp==2.9.0
 dnspython
+pytz
