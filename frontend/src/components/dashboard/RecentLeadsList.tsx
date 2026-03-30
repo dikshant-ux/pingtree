@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react';
 import api from '@/lib/api';
 import { Badge } from '@/components/ui/badge';
 import { FileText, ArrowUpRight } from 'lucide-react';
-import { useTimezone } from '@/context/TimezoneContext';
 import { formatInTimezone } from '@/lib/timezone';
+
 
 interface RecentLead {
     _id: string;
@@ -17,7 +17,6 @@ interface RecentLead {
 }
 
 export default function RecentLeadsList() {
-    const { timezone } = useTimezone();
     const [leads, setLeads] = useState<RecentLead[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -77,7 +76,7 @@ export default function RecentLeadsList() {
                                 </Badge>
                             </div>
                             <p className="text-xs text-muted-foreground">
-                                {formatInTimezone(lead.created_at, timezone, 'relative')}
+                                {formatInTimezone(lead.created_at, undefined, 'relative')}
                             </p>
                         </div>
                     </div>

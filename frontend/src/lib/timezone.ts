@@ -195,17 +195,32 @@ export function getPresetRange(preset: PresetKey, tz: string): DateRange | null 
  */
 export function formatInTimezone(
     utcDate: string | Date,
-    tz: string,
+    tz?: string,
     format: 'datetime' | 'date' | 'time' | 'relative' = 'datetime'
 ): string {
-    const d = typeof utcDate === 'string' ? new Date(utcDate) : utcDate;
-    if (isNaN(d.getTime())) return '—';
-
-    if (format === 'relative') {
-        return formatRelative(d, tz);
+    // ── Force UTC parsing ────────────────────────────────────────────────────
+    // MongoDB/FastAPI returns ISO strings WITHOUT a 'Z' suffix, e.g.:
+    //   "2026-03-27T05:03:50.792000"
+    // JavaScript's Date() treats strings with no timezone as LOCAL time, not UTC.
+    // We append 'Z' to force UTC parsing whenever no offset is present.
+    let d: Date;
+    if (typeof utcDate === 'string') {
+        const hasOffset = utcDate.endsWith('Z') || /[+-]\d{2}:?\d{2}$/.test(utcDate);
+        d = hasOffset ? new Date(utcDate) : new Date(utcDate + 'Z');
+    } else {
+        d = utcDate;
     }
 
-    const opts: Intl.DateTimeFormatOptions = { timeZone: tz };
+    if (isNaN(d.getTime())) return '—';
+
+    // If no timezone provided, use the browser's own timezone
+    const resolvedTz = tz || Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+
+    if (format === 'relative') {
+        return formatRelative(d, resolvedTz);
+    }
+
+    const opts: Intl.DateTimeFormatOptions = { timeZone: resolvedTz };
 
     if (format === 'datetime' || format === 'date') {
         opts.year   = 'numeric';
