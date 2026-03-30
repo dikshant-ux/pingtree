@@ -25,6 +25,17 @@ async def init_db():
         tlsAllowInvalidCertificates=True
     )
     db = client[settings.DATABASE_NAME]
-    
+
     await init_beanie(database=db, document_models=[User, Buyer, Lead, LeadForm, LeadValidationConfig, DomainTokenMapping, Counter, Webhook])
+
+    # ── One-time migration: backfill timezone field on old User documents ──────
+    # Beanie doesn't auto-add new fields to existing documents.
+    # This is idempotent: only touches docs that don't have the field yet.
+    result = await db["users"].update_many(
+        {"timezone": {"$exists": False}},
+        {"$set": {"timezone": "UTC"}}
+    )
+    if result.modified_count:
+        import logging
+        logging.getLogger(__name__).info(f"✅ Migrated {result.modified_count} user(s): added timezone field.")
 
