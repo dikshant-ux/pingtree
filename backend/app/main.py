@@ -55,22 +55,24 @@ logger = logging.getLogger(__name__)
 
 @app.on_event("startup")
 async def startup_event():
+    logger.info("🚀 Starting up... connecting to MongoDB")
+    await init_db()   # Let exceptions propagate — fail fast, don't serve broken state
+    logger.info("✅ MongoDB + Beanie initialized")
+    
     try:
-        logger.info("🚀 Starting up... connecting to MongoDB")
-        await init_db()
-        logger.info("✅ MongoDB Connected")
-        
         logger.info("🔗 Connecting to Redis")
         await redis_client.connect()
         logger.info("✅ Redis Connected")
     except Exception as e:
-        logger.error(f"❌ Startup Error: {str(e)}", exc_info=True)
+        # Redis is not critical for every endpoint — log but don't crash
+        logger.warning(f"⚠️ Redis connection failed (non-fatal): {str(e)}")
 
 @app.on_event("shutdown")
 async def shutdown_event():
     logger.info("🛑 Shutting down...")
     await redis_client.close()
     await http_client_manager.close()
+
 
 @app.get("/")
 async def root():

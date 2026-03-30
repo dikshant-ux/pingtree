@@ -16,8 +16,8 @@ async def init_db():
         settings.MONGODB_URL,
         maxPoolSize=200,
         minPoolSize=0,
-        connectTimeoutMS=10000,
-        serverSelectionTimeoutMS=5000,
+        connectTimeoutMS=30000,
+        serverSelectionTimeoutMS=30000,
         socketTimeoutMS=45000,
         retryReads=True,
         retryWrites=True,
@@ -27,3 +27,4 @@ async def init_db():
     db = client[settings.DATABASE_NAME]
     
     await init_beanie(database=db, document_models=[User, Buyer, Lead, LeadForm, LeadValidationConfig, DomainTokenMapping, Counter, Webhook])
+
