@@ -206,7 +206,7 @@ class AuctionEngine:
             
             # Increment and get new value atomically
             from pymongo import ReturnDocument
-            counter_col = Counter.get_pymongo_collection()
+            counter_col = Counter.get_motor_collection() if hasattr(Counter, "get_motor_collection") else Counter._document_settings.motor_collection
             updated_counter = await counter_col.find_one_and_update(
                 {"collection_name": "leads"},
                 {"$inc": {"last_value": 1}},
