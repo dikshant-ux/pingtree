@@ -61,9 +61,13 @@ export function ValidationStatus({ results }: ValidationStatusProps) {
 
     const responseBody = lvtResult.response_body || {};
     const apiError = responseBody.error || responseBody.body?.error;
-    const isApiFailure = apiError || lvtResult.success === false;
+    const hasData = !!(responseBody.data && (responseBody.data.email || responseBody.data.phone || responseBody.data.ip));
+    
+    // We only show the "LV Error" badge if there is a technical error AND no field data.
+    // If field data exists, we prefer showing the separated view even if the overall status is "invalid".
+    const isTechnicalFailure = apiError && !hasData;
 
-    if (isApiFailure) {
+    if (isTechnicalFailure) {
         const errorMessage = typeof apiError === 'string' ? apiError : (apiError?.message || responseBody.message || "Validation service error");
         const errorCode = apiError?.code || "API_ERROR";
 
