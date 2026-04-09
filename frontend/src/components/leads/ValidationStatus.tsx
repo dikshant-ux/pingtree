@@ -16,12 +16,14 @@ interface ValidationStatusProps {
 export function ValidationStatus({ results }: ValidationStatusProps) {
     if (!results || results.length === 0) return <span className="text-[10px] text-slate-400 italic">None</span>;
 
-    // Find the Lead Validation Tool (LVT) result - can be named LVT or LV
-    const lvtResult = results.find(r => 
-        r.validator_name?.toUpperCase() === 'LVT' || 
-        r.validator_name?.toUpperCase() === 'LV' ||
-        r.validator_name === 'Lead Validation'
-    );
+    // DYNAMIC RECOGNITION: Find any result that provides lead validation data (email, phone, or ip)
+    // This avoids hardcoding names like "LV" or "New Validator"
+    const lvtResult = results.find(r => {
+        const body = r.response_body || {};
+        const data = body.data || {};
+        // Check for the signature structure of the Lead Validation Tool
+        return !!(data.email || data.phone || data.ip || body.decision || body.finalDecision);
+    });
 
     if (!lvtResult) {
         // Fallback to showing other validator names if LVT isn't present
