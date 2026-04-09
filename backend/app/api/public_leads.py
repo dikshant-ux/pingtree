@@ -125,6 +125,12 @@ async def public_ingest_lead(
             if form and getattr(form, 'recaptcha_enabled', False):
                 recaptcha_token = lead_data.pop("g-recaptcha-response", None)
                 if not recaptcha_token:
+                    trace.append({
+                        "timestamp": datetime.utcnow().isoformat(),
+                        "stage": "Security",
+                        "status": "Rejected",
+                        "details": "reCAPTCHA Token Required"
+                    })
                     from app.services.webhook_service import fire_webhooks_for_lead
                     lead = await auction_engine.create_lead(lead_data, LeadStatus.INVALID, trace, start_time, metadata)
                     asyncio.create_task(fire_webhooks_for_lead(lead))
@@ -149,6 +155,12 @@ async def public_ingest_lead(
                 )
                 verify_data = verify_res.json()
                 if not verify_data.get("success"):
+                    trace.append({
+                        "timestamp": datetime.utcnow().isoformat(),
+                        "stage": "Security",
+                        "status": "Rejected",
+                        "details": f"reCAPTCHA Verification Failed: {verify_data.get('error-codes', ['unknown error'])}"
+                    })
                     from app.services.webhook_service import fire_webhooks_for_lead
                     lead = await auction_engine.create_lead(lead_data, LeadStatus.INVALID, trace, start_time, metadata)
                     asyncio.create_task(fire_webhooks_for_lead(lead))
