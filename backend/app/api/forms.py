@@ -20,6 +20,7 @@ class LeadFormCreate(BaseModel):
     recaptcha_site_key: Optional[str] = None
     recaptcha_secret_key: Optional[str] = None
     reject_redirect_url: Optional[str] = None
+    invalid_redirect_url: Optional[str] = None
     click_id_configs: List[ClickIdConfig] = []
 
 class LeadFormUpdate(BaseModel):
@@ -33,6 +34,7 @@ class LeadFormUpdate(BaseModel):
     recaptcha_site_key: Optional[str] = None
     recaptcha_secret_key: Optional[str] = None
     reject_redirect_url: Optional[str] = None
+    invalid_redirect_url: Optional[str] = None
     click_id_configs: Optional[List[ClickIdConfig]] = None
 
 @router.get("/", response_model=List[LeadForm])

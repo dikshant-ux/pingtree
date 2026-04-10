@@ -21,6 +21,7 @@ class LeadForm(Document):
     recaptcha_site_key: Optional[str] = Field(None, description="Custom reCAPTCHA site key")
     encrypted_recaptcha_secret_key: Optional[str] = Field(None, description="Encrypted custom reCAPTCHA secret key")
     reject_redirect_url: Optional[str] = Field(None, description="URL to redirect user if lead is rejected")
+    invalid_redirect_url: Optional[str] = Field(None, description="URL to redirect user if lead is invalid")
     click_id_configs: List[ClickIdConfig] = Field(default_factory=list)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)

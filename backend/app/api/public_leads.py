@@ -10,6 +10,7 @@ from app.core.security import decrypt_secret
 from datetime import datetime
 import time
 from typing import Dict, Any, Optional
+from urllib.parse import urlencode, urlparse, urlunparse, parse_qsl
 
 router = APIRouter()
 
@@ -95,21 +96,58 @@ async def public_ingest_lead(
             if metadata.get("form_id"):
                 try:
                     form = await LeadForm.get(metadata["form_id"])
-                    if form and form.reject_redirect_url:
-                        final_redirect = form.reject_redirect_url
-                except:
+                    if form:
+                        # Prioritize invalid_redirect_url if lead is invalid
+                        if status == "Invalid Lead" and getattr(form, 'invalid_redirect_url', None):
+                            final_redirect = form.invalid_redirect_url
+                        # Fallback to reject_redirect_url
+                        elif form.reject_redirect_url:
+                            final_redirect = form.reject_redirect_url
+                except Exception as e:
+                    print(f"Error fetching form: {e}")
                     pass
             
             # 2. Fallback to automatic construction: source domain + /thank-you
             if not final_redirect and metadata.get("source_url"):
                 try:
-                    from urllib.parse import urlparse
                     parsed = urlparse(metadata["source_url"])
                     if parsed.scheme and parsed.netloc:
                         final_redirect = f"{parsed.scheme}://{parsed.netloc}/thank-you"
-                except:
+                except Exception:
                     pass
         
+        # 3. Handle Templated Pre-population (requested by user)
+        if final_redirect:
+            try:
+                import re
+                from urllib.parse import quote_plus
+                # Case-insensitive lookup map from lead data
+                lookup = {k.lower().replace(" ", "_"): v for k, v in lead_data.items() if isinstance(v, (str, int, float, bool))}
+                
+                # Add metadata fields (source_domain, ip_address, etc.)
+                for k, v in metadata.items():
+                    if isinstance(v, (str, int, float, bool)):
+                        lookup[k.lower().replace(" ", "_")] = v
+                
+                if lead_id:
+                    lookup["lead_id"] = lead_id
+
+                # Common Alises for Prepop
+                if "first_name" in lookup: lookup["fname"] = lookup["first_name"]
+                if "last_name" in lookup: lookup["lname"] = lookup["last_name"]
+                if "zip_code" in lookup: lookup["postalcode"] = lookup["zip_code"]
+                if "state" in lookup: lookup["province"] = lookup["state"]
+                
+                # Replace {{token}} with values from lookup
+                def replacer(match):
+                    token = match.group(1).lower().strip().replace(" ", "_")
+                    val = lookup.get(token, "")
+                    return quote_plus(str(val))
+                
+                final_redirect = re.sub(r"\{\{(.*?)\}\}", replacer, final_redirect)
+            except Exception as e:
+                print(f"Error in template replacement: {e}")
+
         return {
             "status": status,
             "lead_id": lead_id,

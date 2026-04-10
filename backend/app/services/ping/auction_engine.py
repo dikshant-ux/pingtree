@@ -206,7 +206,18 @@ class AuctionEngine:
             
             # Increment and get new value atomically
             from pymongo import ReturnDocument
-            counter_col = Counter.get_motor_collection() if hasattr(Counter, "get_motor_collection") else Counter._document_settings.motor_collection
+            
+            # More robust collection access for different Beanie versions
+            if hasattr(Counter, "get_motor_collection"):
+                counter_col = Counter.get_motor_collection()
+            else:
+                # Fallback for older/different versions as per the error hint
+                settings = Counter.get_settings()
+                counter_col = getattr(settings, "motor_collection", getattr(settings, "pymongo_collection", None))
+                
+            if counter_col is None:
+                raise Exception("Could not access Counter collection")
+                
             updated_counter = await counter_col.find_one_and_update(
                 {"collection_name": "leads"},
                 {"$inc": {"last_value": 1}},

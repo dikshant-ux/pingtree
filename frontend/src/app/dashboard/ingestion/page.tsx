@@ -36,6 +36,7 @@ interface LeadForm {
     recaptcha_site_key?: string;
     recaptcha_secret_key?: string;
     reject_redirect_url?: string;
+    invalid_redirect_url?: string;
     click_id_configs: { key: string; method: string; param_name?: string; script_url?: string; }[];
 }
 
@@ -65,6 +66,7 @@ export default function IngestionPage() {
         recaptcha_site_key: '',
         recaptcha_secret_key: '',
         reject_redirect_url: '',
+        invalid_redirect_url: '',
         click_id_configs: [] as { key: string; method: string; param_name?: string; script_url?: string; }[]
     });
     const [editingForm, setEditingForm] = useState<LeadForm | null>(null);
@@ -169,6 +171,7 @@ export default function IngestionPage() {
                 recaptcha_site_key: '',
                 recaptcha_secret_key: '',
                 reject_redirect_url: '',
+                invalid_redirect_url: '',
                 click_id_configs: []
             });
             toast.success("Form Created Successfully");
@@ -609,6 +612,26 @@ export default function IngestionPage() {
                                 />
                                 <p className="text-[10px] text-muted-foreground italic">If blank, it defaults to [your-domain]/thank-you based on where the form is used.</p>
                             </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-destructive">Invalid Lead Redirection URL (Optional)</label>
+                                <Input
+                                    placeholder="e.g. https://yoursite.com/invalid-lead"
+                                    value={newForm.invalid_redirect_url}
+                                    onChange={(e) => setNewForm({ ...newForm, invalid_redirect_url: e.target.value })}
+                                />
+                                <p className="text-[10px] text-muted-foreground italic">If blank, it falls back to Reject Redirection URL or default thank-you page.</p>
+                            </div>
+                            <div className="bg-accent/30 p-2 rounded-md border border-border mt-2">
+                                <p className="text-[10px] font-bold uppercase text-muted-foreground mb-1">Available URL Tokens</p>
+                                <div className="flex flex-wrap gap-1">
+                                    {['First_Name', 'Last_Name', 'Email', 'Phone', 'address', 'city', 'state', 'Zip_Code', 'credit_rating', 'source_domain', 'click_id', 'source', 'sub_source', 'lead_id'].map(token => (
+                                        <code key={token} className="text-[9px] bg-background px-1.5 py-0.5 rounded border">
+                                            {"{{"}{token}{"}}"}
+                                        </code>
+                                    ))}
+                                </div>
+                                <p className="text-[9px] text-muted-foreground mt-1">Add these to your URL for automatic data mapping.</p>
+                            </div>
 
                             <div className="space-y-3 border-t pt-4">
                                 <label className="text-sm font-semibold flex items-center gap-2">
@@ -829,6 +852,26 @@ export default function IngestionPage() {
                                         onChange={(e) => setEditingForm({ ...editingForm, reject_redirect_url: e.target.value })}
                                     />
                                     <p className="text-[10px] text-muted-foreground italic">If blank, it defaults to [your-domain]/thank-you based on where the form is used.</p>
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium text-destructive">Invalid Lead Redirection URL (Optional)</label>
+                                    <Input
+                                        placeholder="e.g. https://yoursite.com/invalid-lead"
+                                        value={editingForm.invalid_redirect_url || ''}
+                                        onChange={(e) => setEditingForm({ ...editingForm, invalid_redirect_url: e.target.value })}
+                                    />
+                                    <p className="text-[10px] text-muted-foreground italic">If blank, it falls back to Reject Redirection URL or default thank-you page.</p>
+                                </div>
+                                <div className="bg-accent/30 p-2 rounded-md border border-border mt-2">
+                                    <p className="text-[10px] font-bold uppercase text-muted-foreground mb-1">Available URL Tokens</p>
+                                    <div className="flex flex-wrap gap-1">
+                                        {['First_Name', 'Last_Name', 'Email', 'Phone', 'address', 'city', 'state', 'Zip_Code', 'credit_rating', 'source_domain', 'click_id', 'source', 'sub_source', 'lead_id'].map(token => (
+                                            <code key={token} className="text-[9px] bg-background px-1.5 py-0.5 rounded border">
+                                                {"{{"}{token}{"}}"}
+                                            </code>
+                                        ))}
+                                    </div>
+                                    <p className="text-[9px] text-muted-foreground mt-1">Add these to your URL for automatic data mapping.</p>
                                 </div>
 
                                 <div className="space-y-3 border-t pt-4">
